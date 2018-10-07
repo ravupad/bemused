@@ -1,0 +1,17 @@
+deployment
+**/.*.swp
+.vscode
+.idea
+.cache
+dist
+node_modules
+.gradle
+.settings
+bin
+build
+logs
+.classpath
+.gradletasknamecache
+.project
+*.iml
+out
