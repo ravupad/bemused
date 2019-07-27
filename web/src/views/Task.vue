@@ -1,22 +1,26 @@
 <template>
 <div class="tasks flex-column">
   <div class="filters flex-row border">
-    <button class="button" v-for="c in categories().keys()" 
-      :key="c" v-on:click="updateCategory(c)"
-      v-bind:class="{is: category === c}">
-      {{c}}
+    <button class="button" v-on:click="showAll = !showAll; computeDisplayedTasks()"
+      v-bind:class="{is: showAll}">
+      All
     </button>
     <button class="button" v-on:click="toggleShowCompleted()"
       v-bind:class="{is: showCompleted == true}">
       Completed
     </button>
   </div>
+  <div class="filters flex-row border" v-if="!showAll">
+    <button class="button" v-for="c in categories().keys()" 
+      :key="c" v-on:click="updateCategory(c)"
+      v-bind:class="{is: category.has(c)}">
+      {{c}}
+    </button>    
+  </div>
   <TaskComponent v-for="t in displayedTasks" :key="t.id"
     :task="t" :selected="isSelected(t)" :setIsEditing="setIsEditing" 
     :event="getEvent(t)" :select="selectTask(t)"
     v-on:update="updateTask" v-on:delete="deleteTask"/>
-  <hr/>
-  <hr/>
   <TaskComponent class='new-task'
     :task="task" :selected="isSelected(task)" :setIsEditing="setIsEditing" 
     :event="getEvent(task)" v-on:update="createTask" :select="selectTask(task)"/>
@@ -37,8 +41,9 @@ import {DateTime} from 'luxon';
 })
 export default class TaskView extends Vue {
   private tasks: Task[] = [];
-  private task = newTask('None');
-  private category = 'All';
+  private task = newTask('Task');
+  private category: Set<string> = new Set();
+  private showAll = true;
   private showCompleted = false;
   private selectedTask: Task = this.task;
   private displayedTasks: Task[] = [];
@@ -59,7 +64,7 @@ export default class TaskView extends Vue {
           });
         })
         .then((tasks) => this.tasks = tasks)
-        .then(() => this.task = newTask(this.category))
+        .then(() => this.task = newTask('Task'))
         .then(() => this.computeDisplayedTasks())
         .then(() => {
           if (this.displayedTasks.length > 0) {
@@ -168,25 +173,29 @@ export default class TaskView extends Vue {
   }
 
   private updateCategory(category: string) {
-    this.category = category;
-    this.task = newTask(this.category);
+    if (this.category.has(category)) {
+      this.category.delete(category);
+    } else {
+      this.category.add(category);
+    }
     this.computeDisplayedTasks();
   }
 
   private categories(): Set<string> {
     const categories = new Set<string>();
-    categories.add('All');
     this.tasks.forEach((task) => categories.add(task.category));
     return categories;
   }
 
   private computeDisplayedTasks(): Task[] {
     let tasks = this.tasks.filter(() => true);
-    if (!this.showCompleted) {
+    if (this.showCompleted) {
+      tasks = tasks.filter((t) => t.completed);
+    } else {
       tasks = tasks.filter((t) => !t.completed);
     }
-    if (this.category !== 'All') {
-      tasks = tasks.filter((task) => task.category === this.category);
+    if (!this.showAll) {
+      tasks = tasks.filter((task) => this.category.has(task.category));
     }
     tasks = tasks.sort((a: Task, b: Task) => {
       return (DateTime.fromISO(a.schedule_time).toMillis()) -
@@ -242,7 +251,7 @@ export default class TaskView extends Vue {
         .then((res) => {
           nTask.id = res.data;
           this.tasks.push(nTask);
-          this.task = newTask(this.category);
+          this.task = newTask('Task');
         })
         .then(() => this.computeDisplayedTasks());
   }
@@ -259,6 +268,7 @@ export default class TaskView extends Vue {
   width: 100%;
   background-color: #b1f2be;
   padding: 10px 0;
+  margin-bottom: 15px;
 }
 
 .filters > .button {
@@ -267,7 +277,8 @@ export default class TaskView extends Vue {
 }
 
 .filters > .is {
-  background-color: aliceblue;
+  background-color: #4b6db0;
+  color: white;
 }
 
 select {
@@ -278,5 +289,7 @@ select {
 
 .tasks >>> .new-task {
   background-color: #b1f2be;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 </style>
