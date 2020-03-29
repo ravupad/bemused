@@ -1,10 +1,9 @@
-use crate::database::CN;
-use crate::database::{execute, query};
+use crate::error::Error;
 use crate::error::ErrorCode;
 use crate::model::task::Task;
 use crate::Result;
 use postgres::rows::Rows;
-use std::sync::Arc;
+use r2d2_postgres::PostgresConnectionManager;
 
 const INSERT: &str = "
 insert into task(
@@ -36,64 +35,83 @@ delete from task where
   user_id = $1 and 
   id = $2";
 
-pub fn create(cn: CN, task: Arc<Task>) -> Result<i64> {
-    query(
-        &cn,
-        INSERT,
-        &[
-            &task.user_id,
-            &task.text,
-            &task.note,
-            &task.category,
-            &task.schedule_time,
-            &task.schedule_interval_value,
-            &task.schedule_interval_type,
-            &task.completed,
-        ],
-    )
-    .and_then(|rows| match rows.len() {
-        1 => Ok(rows.get(0).get(0)),
-        _ => ErrorCode::DatabaseError.default().err(),
-    })
+pub fn create(pool: &r2d2::Pool<PostgresConnectionManager>, task: Task) -> Result<i64> {
+    pool.get()
+        .map_err(Error::from)?
+        .query(
+            INSERT,
+            &[
+                &task.user_id,
+                &task.text,
+                &task.note,
+                &task.category,
+                &task.schedule_time,
+                &task.schedule_interval_value,
+                &task.schedule_interval_type,
+                &task.completed,
+            ],
+        )
+        .map_err(Error::from)
+        .and_then(|rows| match rows.len() {
+            1 => Ok(rows.get(0).get(0)),
+            _ => ErrorCode::DatabaseError.default().err(),
+        })
 }
 
-pub fn get_by_user_id(cn: CN, user_id: i64) -> Result<Vec<Task>> {
-    query(&cn, BY_USER_ID, &[&user_id]).map(|rows: Rows| {
-        rows.iter()
-            .map(|row| Task {
-                user_id,
-                id: row.get(0),
-                text: row.get(1),
-                note: row.get(2),
-                category: row.get(3),
-                schedule_time: row.get(4),
-                schedule_interval_value: row.get(5),
-                schedule_interval_type: row.get(6),
-                completed: row.get(7),
-            })
-            .collect()
-    })
+pub fn get_by_user_id(
+    pool: &r2d2::Pool<PostgresConnectionManager>,
+    user_id: i64,
+) -> Result<Vec<Task>> {
+    pool.get()
+        .map_err(Error::from)?
+        .query(BY_USER_ID, &[&user_id])
+        .map_err(Error::from)
+        .map(|rows: Rows| {
+            rows.iter()
+                .map(|row| Task {
+                    user_id,
+                    id: row.get(0),
+                    text: row.get(1),
+                    note: row.get(2),
+                    category: row.get(3),
+                    schedule_time: row.get(4),
+                    schedule_interval_value: row.get(5),
+                    schedule_interval_type: row.get(6),
+                    completed: row.get(7),
+                })
+                .collect()
+        })
 }
 
-pub fn update(cn: CN, task: &Task) -> Result<()> {
-    execute(
-        &cn,
-        UPDATE_TASK,
-        &[
-            &task.user_id,
-            &task.id,
-            &task.text,
-            &task.note,
-            &task.category,
-            &task.schedule_time,
-            &task.schedule_interval_value,
-            &task.schedule_interval_type,
-            &task.completed,
-        ],
-    )
-    .map(|_| ())
+pub fn update(pool: &r2d2::Pool<PostgresConnectionManager>, task: Task) -> Result<()> {
+    pool.get()
+        .map_err(Error::from)?
+        .execute(
+            UPDATE_TASK,
+            &[
+                &task.user_id,
+                &task.id,
+                &task.text,
+                &task.note,
+                &task.category,
+                &task.schedule_time,
+                &task.schedule_interval_value,
+                &task.schedule_interval_type,
+                &task.completed,
+            ],
+        )
+        .map_err(Error::from)
+        .map(|_| ())
 }
 
-pub fn delete(cn: CN, user_id: i64, task_id: i64) -> Result<()> {
-    execute(&cn, DELETE_TASK, &[&user_id, &task_id]).map(|_| ())
+pub fn delete(
+    pool: &r2d2::Pool<PostgresConnectionManager>,
+    user_id: i64,
+    task_id: i64,
+) -> Result<()> {
+    pool.get()
+        .map_err(Error::from)?
+        .execute(DELETE_TASK, &[&user_id, &task_id])
+        .map_err(Error::from)
+        .map(|_| ())
 }

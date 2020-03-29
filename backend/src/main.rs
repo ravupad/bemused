@@ -13,12 +13,10 @@ mod sled;
 use self::configuration::Configuration;
 use self::error::Error;
 use self::server::Server;
-use futures::future::Future as SFuture;
-use slog::{info, o, Drain};
 use dotenv::dotenv;
+use slog::{info, o, Drain};
 
 type Result<T> = std::result::Result<T, Error>;
-type Future<T> = Box<SFuture<Item = T, Error = Error> + Send>;
 
 fn main() {
     dotenv().ok();
@@ -30,5 +28,7 @@ fn main() {
     info!(log, "Logging ready!");
     let server = Server::new(&log, &configuration).expect("server");
     info!(log, "Starting http server");
-    server.start(configuration.port, num_cpus::get());
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(server.start(configuration.port));
 }

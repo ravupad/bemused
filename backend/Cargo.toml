@@ -5,22 +5,22 @@ authors = ["Ravi Upadhyay <ravupad@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-futures = "0.1"
-hyper = { version = "0.12", default-features = false }
-net2 = "0.2"
-num_cpus = "1.2"
-serde = "1.0"
-serde_json = "1.0"
-tokio-core = "0.1.17"
-tokio-io = "0.1.12"
-r2d2 = "0.8.3"
-postgres = { version = "0.15", features = ["with-chrono"] }
-r2d2_postgres = "0.14.0"
-chrono = "0.4.6"
-uuid = { version = "0.7", features = ["v4"] }
-http = "0.1.16"
 slog = "2.4.1"
 slog-term = "2.4.0"
 slog-async = "2.3.0"
+tokio = { version = "0.2.13", features = ["full"] }
+hyper = "0.13.4"
+http = "0.2.0"
+tower-service = "0.3.0"
+futures = { version = "0.3.4", features = ["compat"] }
+serde = "1.0"
+serde_json = "1.0"
+postgres = { version = "0.15", features = ["with-chrono"] }
+r2d2 = "0.8.3"
+r2d2_postgres = "0.14.0"
+net2 = "0.2"
+num_cpus = "1.2"
+chrono = "0.4.6"
+uuid = { version = "0.7", features = ["v4"] }
 sled = "0.24.1"
 dotenv = "0.14.1"

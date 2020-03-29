@@ -1,4 +1,6 @@
+create user ravi with encrypted password 'khastgir';
 create database bemused;
+\c bemused
 
 create table users(
   id bigserial not null primary key ,
@@ -24,8 +26,6 @@ create table article(
   tags varchar(256) not null,
   primary key(id, user_id));
 
-create user ravi with encrypted password 'khastgir';
-\c bemused
 grant all privileges on all tables in schema public to ravi;
 grant all privileges on all sequences IN schema public to ravi;
 grant all privileges on all functions IN schema public to ravi;

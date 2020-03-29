@@ -1,7 +1,8 @@
-use crate::database::{execute, query, CN};
+use crate::error::Error;
 use crate::error::ErrorCode;
 use crate::model::article::Article;
 use crate::Result;
+use r2d2_postgres::PostgresConnectionManager;
 
 const INSERT: &str = "
 insert into article(id, user_id, title, text, tags)
@@ -24,69 +25,89 @@ const DELETE: &str = "
 delete from article
 where id = $1 and user_id = $2";
 
-pub fn create(cn: CN, article: &Article) -> Result<()> {
-    execute(
-        &cn,
-        INSERT,
-        &[
-            &article.id,
-            &article.user_id,
-            &article.title,
-            &article.text,
-            &from_tag(&article.tags),
-        ],
-    )
-    .map(|_| ())
+pub fn create(pool: &r2d2::Pool<PostgresConnectionManager>, article: Article) -> Result<()> {
+    pool.get()
+        .map_err(Error::from)?
+        .execute(
+            INSERT,
+            &[
+                &article.id,
+                &article.user_id,
+                &article.title,
+                &article.text,
+                &from_tag(&article.tags),
+            ],
+        )
+        .map_err(Error::from)
+        .map(|_| ())
 }
 
-pub fn get(cn: CN, user_id: i64, id: &str) -> Result<Article> {
-    query(&cn, GET, &[&id, &user_id]).and_then(|rows| {
-        let row = match rows.len() {
-            1 => rows.get(0),
-            _ => return ErrorCode::ResourceNotFound.default().err(),
-        };
-        let article = Article {
-            id: id.to_string(),
-            user_id,
-            title: row.get(0),
-            text: row.get(1),
-            tags: to_tag(&row.get::<_, String>(2)),
-        };
-        Ok(article)
-    })
-}
-
-pub fn list(cn: CN, user_id: i64) -> Result<Vec<Article>> {
-    query(&cn, LIST, &[&user_id]).map(|rows| {
-        rows.iter()
-            .map(|row| Article {
-                id: row.get(0),
+pub fn get(
+    pool: &r2d2::Pool<PostgresConnectionManager>,
+    user_id: i64,
+    id: &str,
+) -> Result<Article> {
+    pool.get()
+        .map_err(Error::from)?
+        .query(GET, &[&id, &user_id])
+        .map_err(Error::from)
+        .and_then(|rows| {
+            let row = match rows.len() {
+                1 => rows.get(0),
+                _ => return ErrorCode::ResourceNotFound.default().err(),
+            };
+            let article = Article {
+                id: id.to_string(),
                 user_id,
-                title: row.get(1),
-                text: String::new(),
+                title: row.get(0),
+                text: row.get(1),
                 tags: to_tag(&row.get::<_, String>(2)),
-            })
-            .collect()
-    })
+            };
+            Ok(article)
+        })
 }
 
-pub fn update(cn: CN, article: &Article) -> Result<()> {
-    execute(
-        &cn,
-        UPDATE,
-        &[
-            &article.id,
-            &article.user_id,
-            &article.title,
-            &article.text,
-            &from_tag(&article.tags),
-        ],
-    )
-    .map(|_| ())
+pub fn list(pool: &r2d2::Pool<PostgresConnectionManager>, user_id: i64) -> Result<Vec<Article>> {
+    pool.get()
+        .map_err(Error::from)?
+        .query(LIST, &[&user_id])
+        .map_err(Error::from)
+        .map(|rows| {
+            rows.iter()
+                .map(|row| Article {
+                    id: row.get(0),
+                    user_id,
+                    title: row.get(1),
+                    text: String::new(),
+                    tags: to_tag(&row.get::<_, String>(2)),
+                })
+                .collect()
+        })
 }
 
-pub fn delete(cn: CN, user_id: i64, id: &str) -> Result<()> {
-    execute(&cn, DELETE, &[&id, &user_id]).map(|_| ())
+pub fn update(pool: &r2d2::Pool<PostgresConnectionManager>, article: Article) -> Result<()> {
+    pool.get()
+        .map_err(Error::from)?
+        .execute(
+            UPDATE,
+            &[
+                &article.id,
+                &article.user_id,
+                &article.title,
+                &article.text,
+                &from_tag(&article.tags),
+            ],
+        )
+        .map_err(Error::from)
+        .map(|_| ())
+}
+
+pub fn delete(pool: &r2d2::Pool<PostgresConnectionManager>, user_id: i64, id: &str) -> Result<()> {
+    pool.get()
+        .map_err(Error::from)?
+        .execute(DELETE, &[&id, &user_id])
+        .map_err(Error::from)
+        .map(|_| ())
 }
 
 fn from_tag(tags: &[String]) -> String {

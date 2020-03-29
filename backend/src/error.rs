@@ -76,13 +76,6 @@ pub struct Error {
 }
 
 impl Error {
-    pub fn internal(error: &dyn error::Error) -> Error {
-        Error {
-            error_code: ErrorCode::InternalError,
-            message: error.to_string(),
-        }
-    }
-
     pub fn err<T>(self) -> Result<T> {
         Err(self)
     }
@@ -141,5 +134,11 @@ impl From<std::num::ParseIntError> for Error {
 impl From<sled::Error> for Error {
     fn from(error: sled::Error) -> Self {
         ErrorCode::DatabaseError.message(error.to_string())
+    }
+}
+
+impl From<http::Error> for Error {
+    fn from(error: http::Error) -> Self {
+        ErrorCode::InternalError.message(error.to_string())
     }
 }

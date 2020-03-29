@@ -1,6 +1,7 @@
+use http::header::HeaderMap;
+use http::header::HeaderValue;
+use http::method::Method;
 use http::request::Parts;
-use hyper::Method;
-use hyper::{header::HeaderValue, HeaderMap};
 
 pub struct Request {
     pub uri: String,

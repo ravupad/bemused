@@ -11,5 +11,5 @@ impl Configuration {
             port: env::var("SERVER_PORT").unwrap().parse().unwrap(),
             postgres: env::var("POSTGRES_CONNECTION_STRING").unwrap(),
         }
-    }    
+    }
 }

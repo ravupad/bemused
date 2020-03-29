@@ -1,48 +1,33 @@
-use crate::Future;
+use crate::Error;
 use hyper::{Body, Response as HResponse, StatusCode};
 
-pub type FR = Future<crate::response::Response>;
-
-pub enum Response {
-    Void,
-    Json(String),
-    Number(i64),
+pub fn response_from_json(json: impl serde::Serialize) -> HResponse<Body> {
+    HResponse::builder()
+        .header("Content-Type", "application/json")
+        .status(StatusCode::OK)
+        .body(Body::from(serde_json::to_string(&json).map_err(Error::from).unwrap()))
+        .unwrap()
 }
 
-impl Response {
-    pub fn into_response(self) -> HResponse<Body> {
-        match self {
-            Response::Void => HResponse::builder()
-                .status(StatusCode::NO_CONTENT)
-                .body(Body::empty())
-                .unwrap(),
-            Response::Json(string) => HResponse::builder()
-                .header("Content-Type", "application/json")
-                .status(StatusCode::OK)
-                .body(Body::from(string))
-                .unwrap(),
-            Response::Number(number) => HResponse::builder()
-                .status(StatusCode::OK)
-                .body(Body::from(number.to_string()))
-                .unwrap(),
-        }
+pub fn response_from_error(err: Error) -> HResponse<Body> {
+    hyper::Response::builder()
+        .header("Content-Type", "application/json")
+        .status(err.error_code.status_code())
+        .body(hyper::Body::from(serde_json::to_string(&err).unwrap()))
+        .unwrap()
+}
+
+pub fn response_from_result(result: crate::Result<HResponse<Body>>) -> HResponse<Body> {
+    match result {
+        Ok(response) => response,
+        Err(e) => response_from_error(e),
     }
 }
 
-impl From<()> for Response {
-    fn from(_: ()) -> Response {
-        Response::Void
-    }
+pub fn response_from_void(_: ()) -> HResponse<Body> {
+    HResponse::builder()
+        .status(StatusCode::NO_CONTENT)
+        .body(Body::empty())
+        .unwrap()
 }
 
-impl From<String> for Response {
-    fn from(string: String) -> Response {
-        Response::Json(string)
-    }
-}
-
-impl From<i64> for Response {
-    fn from(num: i64) -> Response {
-        Response::Number(num)
-    }
-}
