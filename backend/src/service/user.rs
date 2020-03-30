@@ -18,7 +18,7 @@ fn get_session(headers: &HeaderMap<HeaderValue>) -> Result<String> {
 
 pub async fn add_user(
     log: Logger,
-    server: Server,
+    server: &Server,
     username: String,
     password: String,
 ) -> Result<()> {
@@ -30,7 +30,7 @@ pub async fn add_user(
         .map(|_| ())
 }
 
-pub fn create_session(server: Server, username: String, password: String) -> Result<String> {
+pub fn create_session(server: &Server, username: String, password: String) -> Result<String> {
     let uuid = Arc::new(Uuid::new_v4().to_string());
     let uuid1 = uuid.clone();
     let uid = user::match_password(&server.pool, &username, &password);
@@ -50,6 +50,6 @@ pub fn from_header(server: &Server, headers: &HeaderMap<HeaderValue>) -> Result<
     get_session(headers).and_then(|sid| from_session_id(server, sid))
 }
 
-pub fn remove_session(server: Server, session_id: String) -> crate::Result<()> {
+pub fn remove_session(server: &Server, session_id: String) -> crate::Result<()> {
     server.sled.session.del(&session_id)
 }

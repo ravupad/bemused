@@ -63,7 +63,7 @@ impl Server {
     }
 }
 
-async fn handle(server: Server, req: Request) -> http::Response<hyper::Body> {
+async fn handle(server: Server, req: Request<'_>) -> http::Response<hyper::Body> {
     response_from_result(router::router(server.log.new(o!()), server, req).await)
 }
 
@@ -102,7 +102,7 @@ impl tower_service::Service<http::Request<hyper::Body>> for Server {
                     break;
                 }
             }
-            let request = Request::new(parts, raw_body);
+            let request = Request::new(&parts, raw_body);
             Ok(handle(server, request).await)
         };
         Box::pin(future)
