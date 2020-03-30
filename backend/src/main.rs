@@ -2,7 +2,6 @@ mod configuration;
 mod database;
 mod error;
 mod model;
-mod request;
 mod response;
 mod router;
 mod serde;

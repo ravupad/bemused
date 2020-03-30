@@ -5,7 +5,9 @@ pub fn response_from_json(json: impl serde::Serialize) -> HResponse<Body> {
     HResponse::builder()
         .header("Content-Type", "application/json")
         .status(StatusCode::OK)
-        .body(Body::from(serde_json::to_string(&json).map_err(Error::from).unwrap()))
+        .body(Body::from(
+            serde_json::to_string(&json).map_err(Error::from).unwrap(),
+        ))
         .unwrap()
 }
 
@@ -30,4 +32,3 @@ pub fn response_from_void(_: ()) -> HResponse<Body> {
         .body(Body::empty())
         .unwrap()
 }
-
