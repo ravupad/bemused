@@ -1,13 +1,12 @@
 use crate::configuration::Configuration;
 use crate::database::Database;
 use crate::error::Error;
-use crate::response::response_from_result;
+use crate::response::response_from_error;
 use crate::router;
 use crate::sled::Sled;
 use futures::StreamExt;
-use http::Request as Request;
+use http::Request;
 use http::Response;
-use http::request::Parts;
 use hyper::Body;
 use r2d2_postgres::{PostgresConnectionManager, TlsMode};
 use slog::{info, o, warn, Logger};
@@ -18,8 +17,7 @@ use std::ops::Deref;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
-use std::str::Split;
-use std::iter::Map;
+use uuid::Uuid;
 
 pub struct ServerInner {
     log: Logger,
@@ -77,12 +75,19 @@ impl Server {
 }
 
 async fn handle(server: Server, request: Request<Body>) -> Response<Body> {
-    let logger = server.log.new(o!());
-    let response = router::router(logger, server, request).await;
-    response_from_result(response)
+    let logger = server.log.new(o!("RequestId" => Uuid::new_v4().to_string()));
+    let response = router::router(logger.clone(), server, request).await;
+    match response {
+        Ok(body) => {
+            info!(logger, "Request Successful");
+            body
+        }
+        Err(error) => {
+            warn!(logger, "Error: {:?}", &error);
+            response_from_error(error)
+        }
+    }
 }
-
-
 
 impl tower_service::Service<Request<Body>> for Server {
     type Response = Response<Body>;
@@ -95,9 +100,7 @@ impl tower_service::Service<Request<Body>> for Server {
 
     fn call(&mut self, req: Request<Body>) -> Self::Future {
         let server: Server = self.clone();
-        let future = async move {
-            Ok(handle(server, req).await)
-        };
+        let future = async move { Ok(handle(server, req).await) };
         Box::pin(future)
     }
 }
@@ -117,12 +120,17 @@ pub async fn get_body(mut body: Body) -> Vec<u8> {
     raw_body
 }
 
-pub fn get_query_param(parts: &Parts, key: &str) -> Option<String> {
-    parts.uri.query()?
+#[allow(dead_code)]
+pub fn get_query_param<'a>(query: &'a str, key: &str) -> Option<&'a str> {
+    query
         .split('&')
         .map(|kv: &str| kv.split('=').collect())
         .filter(|kv: &Vec<&str>| kv.len() == 2)
         .filter(|kv: &Vec<&str>| kv[0] == key)
-        .map(|kv: Vec<&str>| kv[1].to_string())
+        .map(|kv: Vec<&str>| kv[1])
         .nth(0)
+}
+
+pub fn get_path(path: &str, offset: usize, len: usize) -> Vec<&str> {
+    path.split('/').skip(1).skip(offset).take(len).collect()
 }

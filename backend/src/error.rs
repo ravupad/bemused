@@ -59,10 +59,14 @@ impl ErrorCode {
             ErrorCode::NotAuthenticated => "User is not authenticated",
             any => any.to_string(),
         };
-        self.message(message.to_string())
+        self.message2(message.to_string())
     }
 
-    pub fn message(self, message: String) -> Error {
+    pub fn message(self, message: &str) -> Error {
+        self.message2(message.to_string())
+    }
+
+    fn message2(self, message: String) -> Error {
         Error {
             error_code: self,
             message,
@@ -85,13 +89,13 @@ impl error::Error for Error {}
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} {}", self.error_code.to_string(), self.message)
+        write!(f, "{}: {}", self.error_code.to_string(), self.message)
     }
 }
 
 impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} {}", self.error_code.to_string(), self.message)
+        write!(f, "{}: {}", self.error_code.to_string(), self.message)
     }
 }
 
@@ -103,42 +107,42 @@ impl From<()> for Error {
 
 impl From<r2d2::Error> for Error {
     fn from(error: r2d2::Error) -> Self {
-        ErrorCode::DatabaseConnectionError.message(error.to_string())
+        ErrorCode::DatabaseConnectionError.message2(error.to_string())
     }
 }
 
 impl From<postgres::Error> for Error {
     fn from(error: postgres::Error) -> Self {
-        ErrorCode::DatabaseError.message(error.to_string())
+        ErrorCode::DatabaseError.message2(error.to_string())
     }
 }
 
 impl From<string::FromUtf8Error> for Error {
     fn from(error: string::FromUtf8Error) -> Self {
-        ErrorCode::Utf8Error.message(error.to_string())
+        ErrorCode::Utf8Error.message2(error.to_string())
     }
 }
 
 impl From<serde_json::error::Error> for Error {
     fn from(error: serde_json::error::Error) -> Self {
-        ErrorCode::SerdeJsonError.message(error.to_string())
+        ErrorCode::SerdeJsonError.message2(error.to_string())
     }
 }
 
 impl From<std::num::ParseIntError> for Error {
     fn from(error: std::num::ParseIntError) -> Self {
-        ErrorCode::InvalidInput.message(error.to_string())
+        ErrorCode::InvalidInput.message2(error.to_string())
     }
 }
 
 impl From<sled::Error> for Error {
     fn from(error: sled::Error) -> Self {
-        ErrorCode::DatabaseError.message(error.to_string())
+        ErrorCode::DatabaseError.message2(error.to_string())
     }
 }
 
 impl From<http::Error> for Error {
     fn from(error: http::Error) -> Self {
-        ErrorCode::InternalError.message(error.to_string())
+        ErrorCode::InternalError.message2(error.to_string())
     }
 }

@@ -16,18 +16,13 @@ fn get_session(headers: &HeaderMap<HeaderValue>) -> Result<String> {
         .ok_or_else(|| ErrorCode::NotAuthenticated.default())
 }
 
-pub async fn add_user(
-    log: Logger,
-    server: &Server,
-    username: String,
-    password: String,
-) -> Result<()> {
-    info!(log, "Adding user | username: {}", username);
-    server
+pub async fn add_user(server: &Server, username: String, password: String) -> Result<()> {
+    let result = server
         .database
         .run(move |pool| user::add_user(pool, &username, &password))
         .await
-        .map(|_| ())
+        .map(|_| ());
+    result
 }
 
 pub fn create_session(server: &Server, username: String, password: String) -> Result<String> {
@@ -46,8 +41,16 @@ pub fn from_session_id(server: &Server, session_id: String) -> Result<i64> {
     })
 }
 
-pub fn from_header(server: &Server, headers: &HeaderMap<HeaderValue>) -> Result<i64> {
-    get_session(headers).and_then(|sid| from_session_id(server, sid))
+pub fn from_header(
+    logger: &Logger,
+    server: &Server,
+    headers: &HeaderMap<HeaderValue>,
+) -> Result<i64> {
+    let authorization = get_session(headers)?;
+    info!(logger, "Authorization: {}", &authorization);
+    let user_id = from_session_id(server, authorization)?;
+    info!(logger, "UserId: {}", user_id);
+    Ok(user_id)
 }
 
 pub fn remove_session(server: &Server, session_id: String) -> crate::Result<()> {

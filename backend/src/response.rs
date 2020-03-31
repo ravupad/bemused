@@ -19,13 +19,6 @@ pub fn response_from_error(err: Error) -> HResponse<Body> {
         .unwrap()
 }
 
-pub fn response_from_result(result: crate::Result<HResponse<Body>>) -> HResponse<Body> {
-    match result {
-        Ok(response) => response,
-        Err(e) => response_from_error(e),
-    }
-}
-
 pub fn response_from_void(_: ()) -> HResponse<Body> {
     HResponse::builder()
         .status(StatusCode::NO_CONTENT)
