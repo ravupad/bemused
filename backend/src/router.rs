@@ -9,8 +9,8 @@ use http::Method;
 use hyper::Body;
 use hyper::Request;
 use hyper::Response;
-use slog::Logger;
 use slog::info;
+use slog::Logger;
 
 async fn h1<T>(logger: &Logger, server: &Server, request: Request<Body>) -> Result<(i64, T)>
 where
@@ -27,7 +27,7 @@ pub async fn router(
     server: Server,
     request: Request<Body>,
 ) -> Result<Response<Body>> {
-    info!(logger, "Url: {}",&request.uri().path());
+    info!(logger, "Url: {}", &request.uri().path());
     match &get_path(&request.uri().path(), 0, 1)[..] {
         ["user"] => user_router(logger, server, request).await,
         ["task"] => task_router(logger, server, request).await,

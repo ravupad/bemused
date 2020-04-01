@@ -24,10 +24,10 @@ impl Database {
     {
         let (tx, rx) = tokio::sync::oneshot::channel();
         let f2 = move |pool| {
-            tx.send(f(&pool)).map_err(|_| ()).unwrap();
+            tx.send(f(&pool)).map_err(|_| ()).unwrap_or(());
         };
         let f3 = Box::new(f2);
-        self.tx.clone().send(f3).await.map_err(|_| ()).unwrap();
+        self.tx.clone().send(f3).await.map_err(|_| ()).unwrap_or(());
         rx.await.unwrap()
     }
 }
