@@ -5,7 +5,7 @@ import 'package:Bemused/model/error.dart' as E;
 import 'package:Bemused/core/storage.dart';
 
 class Http {
-  static final String baseUrl = 'https://www.bemused.tk/api';
+  static final String baseUrl = 'https://tasks.ga/api';
   static final String get = "GET";
   static final String post = "POST";
   static final String put = "PUT";
