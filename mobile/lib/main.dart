@@ -4,17 +4,15 @@ import 'package:Bemused/route/check_internet.dart';
 import 'package:Bemused/core/storage.dart';
 import 'package:flutter/material.dart';
 import 'package:Bemused/route/splash.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'model/error.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+SharedPreferences preferences;
 Storage storage;
 Http http;
 RouteObserver<PageRoute> routeObserver = new RouteObserver<PageRoute>();
 
 void main() async {
-  var prefs = await SharedPreferences.getInstance();
-  storage = Storage(prefs);
-  http = Http(storage);
   runApp(MyApp());
 }
 
@@ -58,4 +56,3 @@ dynamic hhe(BuildContext context, Object ex, {
     throw ex;
   }
 }
-

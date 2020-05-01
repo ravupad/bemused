@@ -1,9 +1,12 @@
+import 'package:Bemused/core/http.dart';
+import 'package:Bemused/core/storage.dart';
 import 'package:Bemused/main.dart';
 import 'package:Bemused/model/error.dart' as E;
 import 'package:Bemused/model/error.dart';
 import 'package:Bemused/route/tasks.dart';
 import 'package:flutter/material.dart';
 import 'package:Bemused/route/login.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Splash extends StatefulWidget {
   Splash({key}): super(key: key);
@@ -14,7 +17,9 @@ class Splash extends StatefulWidget {
 class _SplashState extends State<Splash> with RouteAware {
   @override
   void initState() {
-    checkLogin();
+    setup().then((_) {
+      checkLogin();
+    });
     super.initState();
   }
 
@@ -49,6 +54,12 @@ class _SplashState extends State<Splash> with RouteAware {
         ),
       ),
     );
+  }
+
+  Future<void> setup() async {
+    preferences = await SharedPreferences.getInstance();
+    storage = Storage(preferences);
+    http = Http(storage);
   }
 
   Future<void> checkLogin() {
