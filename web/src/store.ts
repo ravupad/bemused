@@ -1,16 +1,18 @@
-import Vue from 'vue';
-import Vuex from 'vuex';
+import { Observable, Subject } from "rxjs";
+import { scan, shareReplay, startWith } from "rxjs/operators";
 
-Vue.use(Vuex);
+export type Function<U, V> = (t: U) => V;
 
-export default new Vuex.Store({
-  state: {
+export class Store<T> {
+  action: Subject<Function<T, T>>;
+  value: Observable<T>;
 
-  },
-  mutations: {
-
-  },
-  actions: {
-
-  },
-});
+  constructor(value: T) {
+    this.action = new Subject();
+    this.value = this.action.pipe(
+      startWith((id: T) => id),
+      scan((acc, updater) => updater(acc), value),
+      shareReplay(1),
+    );
+  }
+}

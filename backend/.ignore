@@ -1,0 +1,8 @@
+# /target/ will only ignore target folder in current directory
+# target/ will ignore target folder in any subdirectory
+sled_db/
+/target/
+.idea
+/database/
+rusty-tags.emacs
+

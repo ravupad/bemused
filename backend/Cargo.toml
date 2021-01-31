@@ -5,6 +5,7 @@ authors = ["Ravi Upadhyay <ravupad@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+toml = "0.5.6"
 slog = "2.4.1"
 slog-term = "2.4.0"
 slog-async = "2.3.0"
@@ -13,15 +14,21 @@ tokio = { version = "0.2.13", features = ["full"] }
 hyper = "0.13.4"
 http = "0.2.0"
 tower-service = "0.3.0"
-futures = { version = "0.3.4", features = ["compat"] }
-serde = "1.0"
+futures = { version = "0.3.5", features = ["compat"] }
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-postgres = { version = "0.15", features = ["with-chrono"] }
-r2d2 = "0.8.3"
-r2d2_postgres = "0.14.0"
+rmp-serde = "0.14.4"
+tokio-postgres = { version = "0.5.5", features = ["with-chrono-0_4"] }  
 net2 = "0.2"
 num_cpus = "1.2"
-chrono = "0.4.6"
+chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "0.8", features = ["v4"] }
-sled = "0.24.1"
+sled = "0.34.4"
 dotenv = "0.14.1"
+rayon = "1.3.0"
+crossbeam-channel = "0.4.2"
+bincode = "1.3.1"
+ternary-tree = "0.1.1"
+hamt-rs = "0.3.0"
+im-rc = "15.0.0"
+radix_trie = "0.2.0"

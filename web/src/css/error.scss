@@ -1,0 +1,36 @@
+@use 'base';
+
+.container {
+    z-index: 1;
+    background-color: rgba(128, 128, 128, .8);
+    height: 100vh;
+    width: 100vw;
+    display: grid;
+    justify-items: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.innercontainer {
+    @extend %border;
+    background-color: aliceblue;
+    width: 300px;
+    display: grid;
+    place-items: center center;
+    height: min-content;
+    margin-top: 20vh;
+}
+
+.message {
+    padding: 20px;
+}
+
+.closebutton {
+    @extend %button;
+    margin-bottom: 20px;   
+}
+
+.closebutton:hover {
+    box-shadow: 3px 3px 1px black;
+}

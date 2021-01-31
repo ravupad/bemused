@@ -19,11 +19,11 @@ create table task(
   completed boolean not null);
 
 create table article(
-  id varchar(256) not null,
+  id varchar(512) not null,
   user_id bigint references users(id),
-  title varchar(256) not null,
-  text varchar(1024) not null,
-  tags varchar(256) not null,
+  title varchar(1024) not null,
+  text varchar(20480) not null,
+  tags varchar(1024) not null,
   primary key(id, user_id));
 
 grant all privileges on all tables in schema public to ravi;

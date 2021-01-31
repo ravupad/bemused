@@ -1,0 +1,19 @@
+@use 'base';
+
+.home {
+    @extend %border;
+    border-radius: 5px;
+    border-width: 2px;
+    display: grid;
+    place-items: center center;
+    margin: 50px auto;
+    padding: 20px;
+    width: 250px;
+    background-color: aliceblue;
+    grid-gap: 40px; 
+}
+
+.button {
+    @extend %button;
+    border-width: 2px;
+}

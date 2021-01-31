@@ -1,0 +1,88 @@
+@use 'base';
+
+.busy {
+    pointer-events: none;
+}
+
+.login {
+    @extend %border;
+    border-radius: 5px;
+    border-width: 2px;
+    background-color: aliceblue;
+    width: 325px;
+    margin: 100px auto;
+    display: grid;
+    place-items: center center;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: auto;
+    grid-gap: 15px;
+    padding: 20px 0;
+}
+
+.header {
+    font-size: 15px;
+    grid-column: 1/span 10;
+    margin: 0;
+}
+
+.error {
+    font-size: 12px;
+    color: red;
+    grid-column: 1/span 10;
+    padding: 5px;
+    margin: -5px 0;
+}
+
+.label {
+    font-size: 14px;
+    grid-column: 2/span 3;
+    place-self: center start;
+}
+
+.input {
+    @extend %input;
+    grid-column: 5/span 5;
+    width: 100%;
+}
+
+.button {
+    @extend %button;
+    grid-column: 2/span 8;
+    width: 100%;
+}
+
+.disabled {
+    background-color: #ca7c7c;
+    color: #000000;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.progress {
+    @extend .disabled;
+}
+
+@keyframes inprogress {
+    0%   {
+        content: " . ";
+    }
+    33%  {
+        content: " .. ";
+    }
+    66%  {
+        content: " ... ";
+    }
+    100% {
+        content: " .... ";
+    }
+}
+
+.progress::after {
+    content: "";
+    animation: inprogress 0.5s linear infinite alternate;
+}
+
+.progress::before {
+    content: "";
+    animation: inprogress 0.5s linear infinite alternate;
+}

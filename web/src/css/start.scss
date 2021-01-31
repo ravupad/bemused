@@ -1,0 +1,17 @@
+@use 'base';
+
+.start {
+    @extend %border;
+    width: 300px;
+    padding: 20px 0;
+    background-color: #f1f1f1;
+    margin: 100px auto;
+    display: grid;
+    place-items: center center;
+    grid-gap: 30px;
+}
+
+.button {
+    @extend %button;
+    width: 200px;
+}
