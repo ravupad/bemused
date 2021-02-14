@@ -3,7 +3,6 @@ import { get } from '../client';
 import { Store } from '../store';
 import { Observable } from 'rxjs';
 import { RawTaskWithId, TaskWithId } from './model';
-import { VExpanded } from './VExpanded';
 import { VList } from './VList';
 import { DateTime } from 'luxon';
 

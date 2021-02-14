@@ -9,7 +9,6 @@ const Start = ({setRoute, Link}) => {
     .catch(() => {});
   return (
     <div class={s.start}>
-      <Link href="/test" class={s.button}>Test</Link>
       <Link href="/login" class={s.button}>Login</Link>
       <Link href="/signup" class={s.button}>Signup</Link>
     </div>

@@ -3,3 +3,5 @@
 /target/
 .idea
 /database/
+sled_db/
+

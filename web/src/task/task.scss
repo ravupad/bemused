@@ -1,0 +1,91 @@
+@use '../css/base';
+
+.filters-container {
+    margin-bottom: 20px;
+}
+
+.newTask {
+    @extend %border, .centered;
+    width: fit-content;
+    padding: 5px;
+    margin: 0 auto;
+    grid-gap: 5px;
+}
+
+.newTask > input, textarea, select {
+    width: 100%;
+}
+
+.button {
+    @extend %button;
+}
+
+.inputerror {
+    border-color: #ff6060 !important;
+}
+
+.errortext {
+    color: red;
+}
+
+.hidden {
+    display: none;
+}
+
+.mini-task::before {
+    content: "[ ] ";
+    font-weight: bold;
+    font-family: "monospace";
+}
+
+.mini-task.completed::before {
+    content: "[✔] ";
+    color: #007382;
+}
+
+.filter-selected {
+    background-color: green;
+    color: white;
+}
+
+.time-relative-container {
+    border: 1px solid black;
+    margin: 0 0 10px 0;
+    padding: 10px;
+    width: 50%;
+}
+
+.time-relative-header {
+    font-weight: 900;
+    text-transform: capitalize;
+    margin: 0 0 10px 0;
+}
+
+.past {
+    background-color: #ff5722;
+}
+
+.yesterday {
+    background-color: lightsalmon;
+}
+
+.today {
+    background-color: #cddc39;
+}
+
+.tomorrow {
+    background-color: #2196f3;
+}
+
+.future {
+    background-color: lightseagreen;
+}
+
+.create-class-button {
+    border-radius: 5px;
+    border: 2px solid black;
+    font-size: 15px;
+    font-weight: 900;
+    background-color: red;
+    color: white;
+}

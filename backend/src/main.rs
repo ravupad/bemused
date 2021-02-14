@@ -11,6 +11,8 @@ use std::result::Result as StdResult;
 type Result<T> = StdResult<T, Error>;
 type Request = hyper::Request<hyper::Body>;
 
+// mod db;
+
 #[tokio::main]
 async fn main() {
     let configuration = Configuration::new("Config.toml");
