@@ -78,7 +78,9 @@ module.exports = (env, argv) => ({
     ],
   },
   plugins: [
-    new MiniCssExtractPlugin(),
+    new MiniCssExtractPlugin({
+      filename: '[name].[hash].css'
+    }),
     new HtmlWebpackPlugin({
       template: 'src/index.html'
     }),

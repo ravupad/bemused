@@ -1,91 +1,87 @@
 @use '../css/base';
 
-.filters-container {
-    margin-bottom: 20px;
+.task-container {
+    margin: 0;
+    display: flex;
+    flex-flow: column;
+    padding: 2rem;
 }
 
-.newTask {
-    @extend %border, .centered;
-    width: fit-content;
-    padding: 5px;
-    margin: 0 auto;
-    grid-gap: 5px;
+.text {
+    font-size: 4rem;
+    margin-top: 3rem;
+    background-color: antiquewhite;
+    padding: 15px;
+    border-radius: 5px;
 }
 
-.newTask > input, textarea, select {
-    width: 100%;
+.note {
+    width: 100% !important;
+    height: 15rem;
+    font-size: 1.25rem;
+    margin-top: 3rem;
+    background-color: antiquewhite;
+    padding: 20px;
+    border-radius: 5px;
+}
+
+.datetime {
+    font-size: 3rem;
+    margin-top: 3rem;
+    width: 75%;
+    border: none;
+}
+
+.category {
+    font-size: 3rem;
+    border: none;
+    margin-top: 3rem;
+}
+
+.repeat-wrapper {
+    margin-top: 3rem;
+    font-size: 3rem;
+}
+
+.repeat-value {
+    font-size: 3rem;
+    border: none;
+}
+
+.repeat-unit {
+    font-size: 3rem;
+    width: 25% !important;
+    margin-top: 2rem;
+}
+
+.repeat-unit option {
+    font-size: 1rem;
+}
+
+.repeat-type {
+    font-size: 3rem;
+    width: 75% !important;
+    margin-top: 2rem;
+}
+
+.repeat-type option {
+    font-size: 1rem;
+}
+
+.button-wrapper {
+    display: flex;
+    flex-direction: row;
+    margin-top: 3rem;
+    justify-content: space-around;
 }
 
 .button {
-    @extend %button;
-}
-
-.inputerror {
-    border-color: #ff6060 !important;
-}
-
-.errortext {
-    color: red;
-}
-
-.hidden {
-    display: none;
-}
-
-.mini-task::before {
-    content: "[ ] ";
-    font-weight: bold;
-    font-family: "monospace";
-}
-
-.mini-task.completed::before {
-    content: "[✔] ";
-    color: #007382;
-}
-
-.filter-selected {
+    font-size: 2rem;
+    width: 20%;
+    border-radius: 5px;
     background-color: green;
     color: white;
+    font-weight: bold;
+    padding: 0.5rem 0;
 }
 
-.time-relative-container {
-    border: 1px solid black;
-    margin: 0 0 10px 0;
-    padding: 10px;
-    width: 50%;
-}
-
-.time-relative-header {
-    font-weight: 900;
-    text-transform: capitalize;
-    margin: 0 0 10px 0;
-}
-
-.past {
-    background-color: #ff5722;
-}
-
-.yesterday {
-    background-color: lightsalmon;
-}
-
-.today {
-    background-color: #cddc39;
-}
-
-.tomorrow {
-    background-color: #2196f3;
-}
-
-.future {
-    background-color: lightseagreen;
-}
-
-.create-class-button {
-    border-radius: 5px;
-    border: 2px solid black;
-    font-size: 15px;
-    font-weight: 900;
-    background-color: red;
-    color: white;
-}

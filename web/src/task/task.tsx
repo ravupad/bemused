@@ -8,6 +8,10 @@ import { Observable, Subject } from 'rxjs';
 import { Function } from '../store';
 import { RouterComponentProps } from '../Router';
 import { map } from 'rxjs/operators';
+import classnames from 'classnames/bind';
+import style from './task.scss';
+
+const cx = classnames.bind(style);
 
 export const RouteTask = ({setRoute, params}: RouterComponentProps): Observable<JSX.Element> => {
   const id = params.get('id');
@@ -76,37 +80,36 @@ const Task = ({setRoute, store, id, task, create}: TaskProps) => {
     fun().catch(e => blockingErrorPromise(e.message)).finally(() => resetModal());
   };
   return (
-    <div>
+    <div class={cx('task-container')}>
       {modal}
-      <input value={task.text} oninput={(e: any) => task.text = e.target.value}/>
-      <br/>
-      <textarea style="width: 100px" value={task.note} oninput={(e: any) => task.note = e.target.value}/>
-      <br/>
-      <input type="datetime-local" value={task.at.toFormat("yyyy-MM-dd'T'HH:mm")}
+      <input class={cx('text')} value={task.text} oninput={(e: any) => task.text = e.target.value}/>
+      <textarea class={cx('note')} style="width: 100px" value={task.note} oninput={(e: any) => task.note = e.target.value}/>
+      <input class={cx('datetime')} type="datetime-local" value={task.at.toFormat("yyyy-MM-dd'T'HH:mm")}
         oninput={(e: any) => task.at = DateTime.fromISO(e.target.value)}/>
-      <br/>
-      <input value={task.category} oninput={(e: any) => task.category = e.target.value}/>
-      <div>
+      <input class={cx('category')} value={task.category} oninput={(e: any) => task.category = e.target.value}/>
+      <div class={cx('repeat-wrapper')}>
         Repeat After:
-        <input style="width: 75px; margin-left: 10px" type="number" min="0" value={task.repeat_value}
+        <input class={cx('repeat-value')} style="width: 75px; margin-left: 10px" type="number" min="0" value={task.repeat_value}
           oninput={(e: any) => task.repeat_value=parseInt(e.target.value)}/>
-        <select style="width: 75px" value={task.repeat_unit} oninput={(e: any) => task.repeat_unit = e.target.value}>
-          <option>Day</option>
-          <option>Week</option>
-          <option>Month</option>
-          <option>Year</option>
-        </select>
-        <select style="width: 180px" value={task.repeat_behavior} oninput={(e: any) => task.repeat_behavior = e.target.value}>
-          <option>FromScheduled</option>
-          <option>FromScheduledInFuture</option>
-          <option>FromCompleted</option>
-        </select>
       </div>
-      {id != null ? <button onclick={() => action(updateHandler)}>Update</button> : []}
-      {id == null ? <button onclick={() => action(createHandler)}>Create</button> : []}
-      {id != null ? <button onclick={() => action(completeHandler)}>Complete</button> : []}
-      {id != null ? <button onclick={() => action(deleteHandler)}>Delete</button> : []}
-      <button onclick={close}>Close</button>
+      <select class={cx('repeat-unit')} style="width: 75px" value={task.repeat_unit} oninput={(e: any) => task.repeat_unit = e.target.value}>
+        <option>Day</option>
+        <option>Week</option>
+        <option>Month</option>
+        <option>Year</option>
+      </select>
+      <select class={cx('repeat-type')} style="width: 180px" value={task.repeat_behavior} oninput={(e: any) => task.repeat_behavior = e.target.value}>
+        <option>FromScheduled</option>
+        <option>FromScheduledInFuture</option>
+        <option>FromCompleted</option>
+      </select>
+      <div  class={cx('button-wrapper')}>
+        {id != null ? <button class={cx('button')} onclick={() => action(updateHandler)}>Update</button> : []}
+        {id == null ? <button class={cx('button')} onclick={() => action(createHandler)}>Create</button> : []}
+        {id != null ? <button class={cx('button')} onclick={() => action(completeHandler)}>Complete</button> : []}
+        {id != null ? <button class={cx('button')} onclick={() => action(deleteHandler)}>Delete</button> : []}
+        <button class={cx('button')} onclick={close}>Close</button>
+      </div>
     </div>
   );
 }

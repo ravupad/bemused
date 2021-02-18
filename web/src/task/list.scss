@@ -1,0 +1,125 @@
+@use '../css/base';
+
+.task-container {
+    margin: 0;
+    background-color: honeydew;
+    display: flex;
+    flex-flow: column;
+    padding-bottom: 2rem;
+}
+
+.page-title {
+    width: fit-content;
+    font-size: 4rem;
+    margin: 0 auto;
+    padding-top: 20px;
+}
+
+.filters-container span {
+    margin: 2rem 0;
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-around;
+}
+
+.filters-container button {
+    padding: 1rem;
+    font-size: 2.5rem;
+    font-weight: bold;
+    border-radius: 0.5rem;
+}
+
+.newTask {
+    @extend %border, .centered;
+    width: fit-content;
+    padding: 5px;
+    margin: 0 auto;
+    grid-gap: 5px;
+}
+
+.newTask > input, textarea, select {
+    width: 100%;
+}
+
+.button {
+    @extend %button;
+}
+
+.inputerror {
+    border-color: #ff6060 !important;
+}
+
+.errortext {
+    color: red;
+}
+
+.hidden {
+    display: none;
+}
+
+.time-relative-header {
+    font-weight: 900;
+    text-transform: capitalize;
+    margin: 0 0 10px 0;
+    font-size: 2.5rem;
+}
+
+.mini-task {
+    font-size: 2rem;
+    margin: 10px 0;
+}
+
+.mini-task::before {
+    content: "[ ] ";
+    font-weight: bold;
+    font-family: "monospace";
+}
+
+.mini-task.completed::before {
+    content: "[✔] ";
+    color: #007382;
+}
+
+.filter-selected {
+    background-color: green;
+    color: white;
+}
+
+.time-relative-container {
+    border: 1px solid black;
+    margin: 0 0 10px 0;
+    padding: 10px;
+    width: 95%;
+    margin-left: 2.5%;
+}
+
+.past {
+    background-color: #ff5722;
+}
+
+.yesterday {
+    background-color: lightsalmon;
+}
+
+.today {
+    background-color: #cddc39;
+}
+
+.tomorrow {
+    background-color: #2196f3;
+}
+
+.future {
+    background-color: lightseagreen;
+}
+
+.create-class-button {
+    border-radius: 5px;
+    border: 2px solid black;
+    font-weight: 900;
+    background-color: red;
+    color: white;
+    font-size: 2.5rem;
+    margin: 1rem auto 0 auto;
+    padding: 1rem 1rem;
+}

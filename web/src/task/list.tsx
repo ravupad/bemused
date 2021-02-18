@@ -1,5 +1,5 @@
 import { React } from '../reactrx';
-import style from './task.scss';
+import style from './list.scss';
 import classnames from 'classnames/bind';
 import { DateTime } from 'luxon';
 import { map } from 'rxjs/operators';
@@ -44,7 +44,7 @@ function List({setRoute, store}: ListProps): JSX.Element {
   let handleNewTask = () => setRoute("/task/new");
   return (
     <div class={cx("task-container")}>
-      <h2>Tasks</h2>
+      <h2 class={cx("page-title")}>Tasks</h2>
       <div class={cx('filters-container')}>{filters}</div>
       {tasks}
       <br/>
