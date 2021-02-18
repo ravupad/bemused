@@ -457,8 +457,7 @@ mod task {
     use hyper::Response;
     use serde::Serialize;
     use serde::Deserialize;
-    use chrono::DateTime;
-    use chrono::Utc;
+    use chrono::{DateTime, Utc};
     use sled::Tree;
     use std::ops::Add;
 
@@ -556,7 +555,7 @@ mod task {
                     RepeatUnit::Day => chrono::Duration::days(value as i64),
                     RepeatUnit::Week => chrono::Duration::weeks(value as i64),
                     RepeatUnit::Month => chrono::Duration::days((value*365/12) as i64),
-                    RepeatUnit::Year => chrono::Duration::days(value as i64 * 365),
+                    RepeatUnit::Year => chrono::Duration::days((value*365) as i64),
                 };
                 task.at = match task.repeat_behavior {
                     RepeatBehavior::FromCompleted => Utc::now().add(duration),

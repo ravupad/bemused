@@ -9,6 +9,13 @@ type RouterProps = {
   fallback?: () => JSX.Element;
 }
 
+export type RouterComponentProps = {
+  setRoute: (route: string) => void;
+  Link: () => JSX.Element;
+  params: Map<string, string>;
+}
+
+type Component = (props: RouterComponentProps) => JSX.Element;
 
 function Router (
   {route, setRoute, fallback}: RouterProps, 
@@ -24,11 +31,11 @@ function Router (
   };
   return route.pipe(map(route => {
     const [Selected, params] = matchTemplates(route, routeMap, fallback);
-    return <Selected setRoute={setRoute} Link={routeLink} {...params}/>;
+    return <Selected setRoute={setRoute} Link={routeLink} params={params}/>;
   }));
 };
 
-export function Route({path, component}: {path: string, component: () => JSX.Element}): [string, () => JSX.Element] {
+export function Route({path, component}: {path: string, component: Component}): [string, Component] {
   return [path, component];
 }
 
@@ -39,12 +46,17 @@ function matchTemplates(
 {
   let path = route.split('/').filter(a => a.length > 0);
   let params: Map<string, string> = new Map();
-  window.location.search.substring(1).split('&').map(a => a.split('=')).forEach(p => params.set(p[0], p[1]));
+  window.location.search.substring(1).split('&')
+      .filter(s => s !== "")
+      .map(a => a.split('='))
+      .forEach(p => params.set(p[0], p[1]));
   for (let [key, value] of templates) {
     let template = key.split('/').filter(a => a.length > 0);
     let res = matchTemplate(template, path);
     if (res[0] !== false) {
-      params = {...params, ...res[1]};
+      for (const [key, value] of res[1]) {
+        params.set(key, value);
+      }
       return [value, params];
     }
   }

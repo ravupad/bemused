@@ -12,6 +12,7 @@ module.exports = (env, argv) => ({
   output: {
     path: path.join(__dirname, 'dist'),
     filename: '[name].[hash].js',
+    publicPath: '/',
   },
   resolve: {
     extensions: [

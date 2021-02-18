@@ -3,14 +3,26 @@ import style from './task.scss';
 import classnames from 'classnames/bind';
 import { DateTime } from 'luxon';
 import { map } from 'rxjs/operators';
-import { TaskStore, toggleCategorySelection } from './VMain';
-import { combineLatest, Subscriber } from 'rxjs';
-import { Task, TaskWithId } from './model';
-import { VExpanded } from './VExpanded';
+import { getTaskStore, TaskStore, toggleCategorySelection } from './main';
+import { combineLatest, Observable } from 'rxjs';
+import { Task, TaskWithId } from './main';
+import { RouterComponentProps } from '../Router';
 
 const cx = classnames.bind(style);
 
-export function VList({store, view}: {store: TaskStore; view: Subscriber<JSX.Element>}): JSX.Element {
+export const RouteList = ({setRoute}: RouterComponentProps): Observable<JSX.Element> => {
+  return new Observable(view => {
+    view.next(<div>Loading</div>);
+    getTaskStore().then(store => view.next(<List setRoute={setRoute} store={store}/>));
+  });
+}
+
+type ListProps = {
+  setRoute: (route: string) => void;
+  store: TaskStore;
+}
+
+function List({setRoute, store}: ListProps): JSX.Element {
   let filters = store.tasks.value.pipe(
     map(tasks => new Set(tasks.map(task => task[1].category))),
     map(categories => Array.from(categories)),
@@ -25,9 +37,11 @@ export function VList({store, view}: {store: TaskStore; view: Subscriber<JSX.Ele
       tasks.forEach(task => timeRelativeCategories.get(taskTimeRelativeToToday(task[1])).push(task));
       return timeRelativeCategories;
     }),
-    map(tasks => relativeDurations.map(duration => <VMiniContainer timeRelative={duration} tasks={tasks.get(duration)} store={store} view={view} />)),
+    map(tasks => relativeDurations.map(duration => 
+      <VMiniContainer timeRelative={duration} tasks={tasks.get(duration)} store={store} setRoute={setRoute}/>)
+    ),
   );
-  let handleNewTask = () => view.next(<VExpanded store={store} view={view}/>);
+  let handleNewTask = () => setRoute("/task/new");
   return (
     <div class={cx("task-container")}>
       <h2>Tasks</h2>
@@ -50,14 +64,14 @@ type VMiniContainerProps = {
   timeRelative: RelativeDuration;
   tasks: TaskWithId[]; 
   store: TaskStore; 
-  view: Subscriber<JSX.Element>;
+  setRoute: (route: string) => void;
 }
 
-function VMiniContainer({timeRelative, tasks, store, view}: VMiniContainerProps): JSX.Element {
+function VMiniContainer({timeRelative, tasks, store, setRoute}: VMiniContainerProps): JSX.Element {
   return (
     <div class={cx('time-relative-container', timeRelative)}>
       <div class={cx('time-relative-header')}>{timeRelative}</div>
-      {tasks.map(task => <VMini id={task[0]} task={task[1]} store={store} view={view}/>)}
+      {tasks.map(task => <VMini id={task[0]} task={task[1]} store={store} setRoute={setRoute}/>)}
     </div>
   );
 }
@@ -66,12 +80,12 @@ type VMiniProps = {
   id: number; 
   task: Task; 
   store: TaskStore; 
-  view: Subscriber<JSX.Element>;
+  setRoute: (route: string) => void;
 }
 
-function VMini({id, task, store, view}: VMiniProps): JSX.Element {
+function VMini({id, task, store, setRoute}: VMiniProps): JSX.Element {
   let taskClass = cx('mini-task', {'completed': task.completed});
-  let expandTask = () => view.next(<VExpanded id={id} task={task} store={store} view={view} />);
+  let expandTask = () => setRoute(`task/${id}`);
   return <div onclick={expandTask} class={taskClass}>{task.text}</div>;
 }
 
