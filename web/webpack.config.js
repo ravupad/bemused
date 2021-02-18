@@ -2,6 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const CopyPlugin = require("copy-webpack-plugin");
 
 const dev = (argv) => argv.mode === 'development';
 
@@ -78,7 +79,12 @@ module.exports = (env, argv) => ({
   },
   plugins: [
     new MiniCssExtractPlugin(),
-    new HtmlWebpackPlugin(),
+    new HtmlWebpackPlugin({
+      template: 'src/index.html'
+    }),
+    new CopyPlugin({
+      patterns: ["public"],
+    }),
   ].filter(Boolean),
   devServer: {
     contentBase: path.join(__dirname, 'dist'),
