@@ -20,7 +20,7 @@ render(
     <Route path="/task" component={TaskList}/>
     <Route path="/task/:id" component={Task}/>
   </Router>,
-  document.body
+  document.getElementById('app')
 );
 
 export {

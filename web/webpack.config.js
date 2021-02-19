@@ -3,6 +3,7 @@ const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyPlugin = require("copy-webpack-plugin");
+const WorkboxPlugin = require('workbox-webpack-plugin');
 
 const dev = (argv) => argv.mode === 'development';
 
@@ -86,6 +87,10 @@ module.exports = (env, argv) => ({
     }),
     new CopyPlugin({
       patterns: ["public"],
+    }),
+    new WorkboxPlugin.GenerateSW({
+      clientsClaim: true,
+      skipWaiting: true,
     }),
   ].filter(Boolean),
   devServer: {
