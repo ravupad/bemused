@@ -1,5 +1,4 @@
 # TODO
-* Mobile layouts for login/signup and home page
 * Fix time update which doesn't change date in case of increment of month or year.
 * Alarms/reminders/notifications
 * Task Logs (Tracker)
@@ -11,4 +10,5 @@
 * Added manifest
 * Mobile appropriate layout
 * Service Worker
+* Mobile layouts for login/signup and home page
 

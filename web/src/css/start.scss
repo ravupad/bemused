@@ -2,16 +2,21 @@
 
 .start {
     @extend %border;
-    width: 300px;
-    padding: 20px 0;
-    background-color: #f1f1f1;
-    margin: 100px auto;
-    display: grid;
-    place-items: center center;
-    grid-gap: 30px;
+    border-radius: 5px;
+    border-width: 2px;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    background-color: aliceblue;
+    grid-gap: 40px; 
+    min-height: 100vh;
+
 }
 
 .button {
     @extend %button;
-    width: 200px;
+    border-width: 2px;
+    width: 50%;
+    margin: 8em auto 0 auto;
+    font-size: 4em;
 }

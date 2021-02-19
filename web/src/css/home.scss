@@ -4,16 +4,18 @@
     @extend %border;
     border-radius: 5px;
     border-width: 2px;
-    display: grid;
-    place-items: center center;
-    margin: 50px auto;
+    display: flex;
+    flex-direction: column;
     padding: 20px;
-    width: 250px;
     background-color: aliceblue;
     grid-gap: 40px; 
+    min-height: 100vh;
 }
 
 .button {
     @extend %button;
     border-width: 2px;
+    width: 50%;
+    margin: 8em auto 0 auto;
+    font-size: 4em;
 }
