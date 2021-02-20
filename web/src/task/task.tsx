@@ -94,9 +94,7 @@ const Task = ({setRoute, store, id, task, create}: TaskProps) => {
       </div>
       <select class={cx('repeat-unit')} style="width: 75px" value={task.repeat_unit} oninput={(e: any) => task.repeat_unit = e.target.value}>
         <option>Day</option>
-        <option>Week</option>
         <option>Month</option>
-        <option>Year</option>
       </select>
       <select class={cx('repeat-type')} style="width: 180px" value={task.repeat_behavior} oninput={(e: any) => task.repeat_behavior = e.target.value}>
         <option>FromScheduled</option>

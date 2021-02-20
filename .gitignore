@@ -1,3 +1,4 @@
+backend/sled_db
 *.log
 deployment
 **/.*.swp

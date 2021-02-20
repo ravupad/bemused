@@ -235,6 +235,7 @@ mod error {
         SessionIdHeaderMissing,
         SessionDoesNotExist,
         SessionIdParse,
+        InvalidRequest,
         #[serde(skip)]
         Internal(Box<dyn StdError + Send>),
     }
@@ -281,7 +282,7 @@ mod state {
             let sled_db = sled::open(&config.sled_path)?;
             info!(logger, "opened sled database");            
             let user = UserRepository::new(&sled_db)?;
-            let task = TaskRepository::new(&sled_db)?;
+            let task = TaskRepository::new(&sled_db, logger)?;
             Ok(State {
                 user,
                 task,
@@ -442,6 +443,7 @@ mod user {
 }
 
 mod task {
+    use std::ops::Add;
     use crate::error::Error;
     use crate::request::path;
     use crate::request::body;
@@ -455,28 +457,25 @@ mod task {
     use http::Method;
     use hyper::Body;
     use hyper::Response;
-    use serde::Serialize;
-    use serde::Deserialize;
-    use chrono::{DateTime, Utc};
+    use serde::{Serialize, Deserialize};
+    use chrono::{DateTime, Utc, Datelike};
     use sled::Tree;
-    use std::ops::Add;
+    use slog::{Logger, info};
 
-    #[derive(Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize, Debug)]
     pub enum RepeatUnit {
         Day,
-        Week,
         Month,
-        Year,
     }
 
-    #[derive(Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize, Debug)]
     pub enum RepeatBehavior {
         FromCompleted,
         FromScheduledInFuture,
         FromScheduled,
     }
     
-    #[derive(Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize, Debug)]
     pub struct Task {
         pub text: String,
         pub note: String,
@@ -488,16 +487,77 @@ mod task {
         pub completed: bool,
     }
 
-    const SLED_MAIN: &'static str = "task_main";
+    mod deprecated {
+        use super::*;
+
+        #[derive(Serialize, Deserialize, Debug)]
+        pub enum RepeatUnitV0 {
+            Day,
+            Week,        
+            Month,
+            Year,
+        }
+
+        #[derive(Serialize, Deserialize, Debug)]
+        pub struct TaskV0 {
+            pub text: String,
+            pub note: String,
+            pub category: String,
+            pub at: DateTime<Utc>,
+            pub repeat_value: u64,
+            pub repeat_unit: RepeatUnitV0,
+            pub repeat_behavior: RepeatBehavior,
+            pub completed: bool,
+        }
+    }    
 
     pub struct Repository {
         main: Tree,
     }
 
     impl Repository {
-        pub fn new(sled_db: &sled::Db) -> Result<Self> {
+        pub fn new(sled_db: &sled::Db, logger: Logger) -> Result<Self> {
+            let metadata = sled_db.open_tree("task_main_metadata")?;
+            let main = sled_db.open_tree("task_main")?;
+            let version: u32 = metadata.get("version").unwrap()
+                    .map(|ivec| utils::bc_de(&ivec).unwrap())
+                    .unwrap_or_else(|| 1);
+            info!(logger, "task table version: {}", version);
+            use deprecated::*;
+            match version {
+                1 => {
+                    for res in main.iter() {
+                        let (key, old_body) = res.unwrap();
+                        let old_val: TaskV0 = utils::bc_de(&old_body).unwrap();
+                        let (repeat_value, repeat_unit) = match old_val.repeat_unit {
+                            RepeatUnitV0::Day => (old_val.repeat_value, RepeatUnit::Day),
+                            RepeatUnitV0::Week => (old_val.repeat_value * 7, RepeatUnit::Day),
+                            RepeatUnitV0::Month => (old_val.repeat_value, RepeatUnit::Month),
+                            RepeatUnitV0::Year => (old_val.repeat_value * 12, RepeatUnit::Month),
+                        };
+                        let new_val = Task {
+                            text: old_val.text,
+                            note: old_val.note,
+                            category: old_val.category,
+                            at: old_val.at,
+                            repeat_unit,
+                            repeat_value,
+                            repeat_behavior: old_val.repeat_behavior,
+                            completed: old_val.completed,
+                        };
+                        let new_body = utils::bc_se(&new_val).unwrap();
+                        main.insert(key, new_body).unwrap();
+                    }
+                    info!(logger, "completed task table migration for version 2");
+                },
+                2 => {
+                    info!(logger, "task table on latest version");
+                },
+                _ => panic!("unknown version for task repository")
+            }
+            metadata.insert("version", utils::bc_se::<u32>(&2).unwrap()).unwrap();
             Ok(Repository {
-                main: sled_db.open_tree(SLED_MAIN)?,
+                main,
             })
         }
 
@@ -551,22 +611,17 @@ mod task {
                 Ok(None)
             }
             value => {
-                let duration = match task.repeat_unit {
-                    RepeatUnit::Day => chrono::Duration::days(value as i64),
-                    RepeatUnit::Week => chrono::Duration::weeks(value as i64),
-                    RepeatUnit::Month => chrono::Duration::days((value*365/12) as i64),
-                    RepeatUnit::Year => chrono::Duration::days((value*365) as i64),
-                };
-                task.at = match task.repeat_behavior {
-                    RepeatBehavior::FromCompleted => Utc::now().add(duration),
-                    RepeatBehavior::FromScheduled => task.at.add(duration),
-                    RepeatBehavior::FromScheduledInFuture => {
-                        let now = Utc::now();
-                        let mut time = task.at + duration;
-                        while (now - time).num_milliseconds() > 0 {
-                            time = time + duration;
-                        }
-                        time
+                match task.repeat_unit {
+                    RepeatUnit::Day => {
+                        task.at = task.at.add(chrono::Duration::days(value as i64));
+                    }
+                    RepeatUnit::Month => {
+                        let months0 = task.at.month0() + value as u32;
+                        let corrected_month0 = months0 % 12;
+                        let corrected_year = task.at.year() + (months0 / 12) as i32;
+                        task.at = task.at.with_year(corrected_year)
+                            .and_then(|t| t.with_month0(corrected_month0))
+                            .ok_or_else(|| Error::InvalidRequest)?;
                     }
                 };
                 repository.update(user_id, id, &task)?;

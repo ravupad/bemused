@@ -3,7 +3,7 @@ import { Store } from '../store';
 import { DateTime } from 'luxon';
 
 /// Interfaces
-export type RepeatUnit = "Day" | "Week" | "Year" | "Month";
+export type RepeatUnit = "Day" | "Month";
 
 export type RepeatBehavior = "FromScheduled" | "FromScheduledInFuture" | "FromCompleted";
 
