@@ -88,7 +88,7 @@ module.exports = (env, argv) => ({
     new CopyPlugin({
       patterns: ["public"],
     }),
-    new WorkboxPlugin.GenerateSW({
+    dev(argv) ? false: new WorkboxPlugin.GenerateSW({
       clientsClaim: true,
       skipWaiting: true,
     }),

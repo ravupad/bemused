@@ -2,11 +2,12 @@ import { React } from '../reactrx';
 import style from './list.scss';
 import classnames from 'classnames/bind';
 import { DateTime } from 'luxon';
-import { map } from 'rxjs/operators';
-import { getTaskStore, TaskStore, toggleCategorySelection } from './main';
+import { map, tap } from 'rxjs/operators';
+import { getPostponedOrScheduledTime, getTaskStore, TaskStore, toggleCategorySelection } from './main';
 import { combineLatest, Observable } from 'rxjs';
 import { Task, TaskWithId } from './main';
 import { RouterComponentProps } from '../Router';
+import { setRoute, sleep } from '../index';
 
 const cx = classnames.bind(style);
 
@@ -28,6 +29,24 @@ function List({setRoute, store}: ListProps): JSX.Element {
     map(categories => Array.from(categories)),
     map(categories => categories.map(category => <FilterButton store={store} category={category}/>)),
   );
+  let currentTask = store.tasks.value.pipe(
+    map(tasks => tasks.sort((t1, t2) => {
+      let a = t1[1].postponed_at != null ? t1[1].postponed_at : t1[1].at;
+      let b = t2[1].postponed_at != null ? t2[1].postponed_at : t2[1].at;
+      return a.diff(b).as("milliseconds");
+    })),
+    map(tasks => tasks[0]),
+  );
+  currentTask.subscribe(t => {
+    if (Notification.permission == 'granted') {
+      sleep(getPostponedOrScheduledTime(t[1]).diff(DateTime.local()).as("milliseconds"))
+          .then(() => {
+            navigator.serviceWorker.getRegistration().then(function(reg) {
+              reg.showNotification(`Time for ${t[1].text}`);
+            });
+          });
+    }
+  });
   let tasks = combineLatest([store.tasks.value, store.selectedCategories.value]).pipe(
     map(([tasks, categories]) => tasks.filter(task => categories.has(task[1].category))),
     map(tasks => tasks.sort((a, b) => a[1].at.diff(b[1].at).as("milliseconds"))),
@@ -46,9 +65,10 @@ function List({setRoute, store}: ListProps): JSX.Element {
     <div class={cx("task-container")}>
       <h2 class={cx("page-title")}>Tasks</h2>
       <div class={cx('filters-container')}>{filters}</div>
+      {currentTask.pipe(map(t => <CurrentTask task={t} store={store}/>))}
       {tasks}
       <br/>
-      <button onclick={handleNewTask} class={cx('create-class-button')}>Create New Task</button>
+      <button onclick={handleNewTask} class={cx('create-class-button')}>+</button>
     </div>
   );
 };
@@ -60,6 +80,15 @@ function FilterButton({store, category}: {store: TaskStore, category: string}): 
   return <button onclick={toggleFilter} class={className}>{category}</button>;
 }
 
+function CurrentTask({task, store}: {task: TaskWithId, store: TaskStore}): JSX.Element {
+  return (
+    <div class={cx("mini-container", "current-task")} onclick={() => setRoute(`task/${task[0]}`)}>
+      <div class={cx("mini-task-header")}>Current Task</div>
+      <VMini id={task[0]} task={task[1]} store={store} setRoute={setRoute} />
+    </div>
+  );
+}
+
 type VMiniContainerProps = {
   timeRelative: RelativeDuration;
   tasks: TaskWithId[]; 
@@ -69,8 +98,8 @@ type VMiniContainerProps = {
 
 function VMiniContainer({timeRelative, tasks, store, setRoute}: VMiniContainerProps): JSX.Element {
   return (
-    <div class={cx('time-relative-container', timeRelative)}>
-      <div class={cx('time-relative-header')}>{timeRelative}</div>
+    <div class={cx('mini-container', timeRelative)}>
+      <div class={cx('mini-task-header')}>{timeRelative}</div>
       {tasks.map(task => <VMini id={task[0]} task={task[1]} store={store} setRoute={setRoute}/>)}
     </div>
   );

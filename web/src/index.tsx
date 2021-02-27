@@ -23,6 +23,20 @@ render(
   document.getElementById('app')
 );
 
+Notification.requestPermission(function(status) {
+  console.log('Notification permission status:', status);
+});
+
+// if (Notification.permission == 'granted') {
+//   navigator.serviceWorker.getRegistration().then(function(reg) {
+//     reg.showNotification('Hello world! Beginning of notifications!');
+//   });
+// }
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export {
   setRoute
 };

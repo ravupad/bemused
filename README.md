@@ -4,6 +4,7 @@
 * Subtask
 * Generic Sled Layer
 * Reactrx optimizations
+* Timer (duration) for tasks
 
 # DONE
 * Makefile for deploying to server

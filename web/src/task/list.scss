@@ -1,71 +1,64 @@
 @use '../css/base';
 
 .task-container {
-    margin: 0;
     background-color: honeydew;
     display: flex;
     flex-flow: column;
-    padding-bottom: 2rem;
 }
 
 .page-title {
     width: fit-content;
-    font-size: 4rem;
+    font-size: 4em;
     margin: 0 auto;
     padding-top: 20px;
 }
 
 .filters-container span {
-    margin: 2rem 0;
+    margin: 2em 0;
     display: flex;
     flex-flow: row wrap;
     justify-content: space-around;
 }
 
 .filters-container button {
-    padding: 1rem;
-    font-size: 2.5rem;
+    padding: 0.5em 0.5em;
+    font-size: 2.25em;
     font-weight: bold;
-    border-radius: 0.5rem;
+    border-radius: 0.5em;
 }
 
-.newTask {
-    @extend %border, .centered;
-    width: fit-content;
-    padding: 5px;
-    margin: 0 auto;
-    grid-gap: 5px;
+.filter-selected {
+    background-color: green;
+    color: white;
 }
 
-.newTask > input, textarea, select {
-    width: 100%;
+.mini-container {
+    border: 1px solid black;
+    margin: 0 0 10px 0;
+    padding: 10px;
+    width: 95%;
+    margin-left: 2.5%;
 }
 
-.button {
-    @extend %button;
+.current-task .mini-task-header {
+    font-size: 3em;
+    font-weight: normal;
 }
 
-.inputerror {
-    border-color: #ff6060 !important;
+.current-task .mini-task {
+    font-size: 4em;
+    font-weight: bold;
 }
 
-.errortext {
-    color: red;
-}
-
-.hidden {
-    display: none;
-}
-
-.time-relative-header {
+.mini-task-header {
     font-weight: 900;
     text-transform: capitalize;
     margin: 0 0 10px 0;
-    font-size: 2.5rem;
+    font-size: 2em;
 }
 
 .mini-task {
-    font-size: 2rem;
+    font-size: 1.8em;
     margin: 10px 0;
 }
 
@@ -80,46 +73,54 @@
     color: #007382;
 }
 
-.filter-selected {
-    background-color: green;
-    color: white;
-}
-
-.time-relative-container {
-    border: 1px solid black;
-    margin: 0 0 10px 0;
-    padding: 10px;
-    width: 95%;
-    margin-left: 2.5%;
-}
-
-.past {
-    background-color: #ff5722;
-}
-
-.yesterday {
-    background-color: lightsalmon;
-}
-
-.today {
-    background-color: #cddc39;
-}
-
-.tomorrow {
-    background-color: #2196f3;
-}
-
-.future {
-    background-color: lightseagreen;
-}
+.past { background-color: #ff5722; }
+.yesterday { background-color: lightsalmon; }
+.today { background-color: #cddc39; }
+.tomorrow { background-color: #2196f3; }
+.future { background-color: lightseagreen; }
 
 .create-class-button {
-    border-radius: 5px;
-    border: 2px solid black;
-    font-weight: 900;
-    background-color: red;
-    color: white;
-    font-size: 2.5rem;
-    margin: 1rem auto 0 auto;
-    padding: 1rem 1rem;
+    background-color: #e6ffbf;
+    border: 1px solid silver;
+    border-radius: 50%;
+    box-shadow: 0px 0px 9px -5px black;
+    color: #178a40;
+    font-size: 12em;
+    font-weight: bolder;
+    width: 8rem;
+    height: 8rem;
+    position: fixed;
+    bottom: 6rem;
+    right: 6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media only screen and (min-width: 1000px) {
+    .task-container {
+        margin: 20 auto;
+        max-width: 1000px;
+        border: 4px solid silver;
+        border-radius: 5px;
+    }
+
+    .filters-container button {
+        font-size: 1.75em;
+    }
+
+    .current-task .mini-task-header {
+        font-size: 2em;
+    }
+    
+    .current-task .mini-task {
+        font-size: 3em;
+    }
+
+    .create-class-button {
+        right: 18rem;
+        font-size: 10rem;
+        width: 7rem;
+        height: 7rem;
+    }
 }

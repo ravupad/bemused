@@ -8,10 +8,11 @@ export type RepeatUnit = "Day" | "Month";
 export type RepeatBehavior = "FromScheduled" | "FromScheduledInFuture" | "FromCompleted";
 
 export interface Task {
-  text: string,
-  note: string,
-  completed: boolean,
-  at: DateTime,
+  text: string;
+  note: string;
+  completed: boolean;
+  at: DateTime;
+  postponed_at?: DateTime;
   repeat_value: number;
   repeat_unit: RepeatUnit;
   repeat_behavior: RepeatBehavior;
@@ -20,16 +21,27 @@ export interface Task {
 
 export type TaskWithId = [number, Task];
 
-export type RawTask = Omit<Task, 'at'> & { at: string };
+export type RawTask = Omit<Task, 'at|postponed_at'> & { 
+  at: string;
+  postponed_at: string;
+};
 
 export type RawTaskWithId = [number, RawTask];
 
+// Methods on Interface
+export function getPostponedOrScheduledTime(task: Task): DateTime {
+  return task.postponed_at != null ? task.postponed_at : task.at;
+}
+
+
+
+// Store
 export type TaskStore = {
   tasks: Store<TaskWithId[]>;
   selectedCategories: Store<Set<string>>;
 }
 
-/// Methods
+/// Store Actions
 let taskStore: TaskStore = null;
 
 export const getTaskStore = async (): Promise<TaskStore> => {
@@ -38,7 +50,11 @@ export const getTaskStore = async (): Promise<TaskStore> => {
   }
   const rawTasks: RawTaskWithId[] = await get('/task');
   const tasks: TaskWithId[] = rawTasks.map(task => {
-    return [task[0], {...task[1], at: DateTime.fromISO(task[1].at)}];
+    return [task[0], {
+      ...task[1], 
+      at: DateTime.fromISO(task[1].at),
+      postponed_at: task[1].postponed_at != null ? DateTime.fromISO(task[1].postponed_at) : null,
+    }];
   });
   let allCategories = new Set(tasks.map(task => task[1].category));
   taskStore = {

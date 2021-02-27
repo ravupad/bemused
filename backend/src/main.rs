@@ -481,6 +481,7 @@ mod task {
         pub note: String,
         pub category: String,
         pub at: DateTime<Utc>,
+        pub postponed_at: Option<DateTime<Utc>>,
         pub repeat_value: u64,
         pub repeat_unit: RepeatUnit,
         pub repeat_behavior: RepeatBehavior,
@@ -490,22 +491,14 @@ mod task {
     mod deprecated {
         use super::*;
 
-        #[derive(Serialize, Deserialize, Debug)]
-        pub enum RepeatUnitV0 {
-            Day,
-            Week,        
-            Month,
-            Year,
-        }
-
-        #[derive(Serialize, Deserialize, Debug)]
+        #[derive(Serialize, Deserialize)]
         pub struct TaskV0 {
             pub text: String,
             pub note: String,
             pub category: String,
             pub at: DateTime<Utc>,
             pub repeat_value: u64,
-            pub repeat_unit: RepeatUnitV0,
+            pub repeat_unit: RepeatUnit,
             pub repeat_behavior: RepeatBehavior,
             pub completed: bool,
         }
@@ -529,26 +522,21 @@ mod task {
                     for res in main.iter() {
                         let (key, old_body) = res.unwrap();
                         let old_val: TaskV0 = utils::bc_de(&old_body).unwrap();
-                        let (repeat_value, repeat_unit) = match old_val.repeat_unit {
-                            RepeatUnitV0::Day => (old_val.repeat_value, RepeatUnit::Day),
-                            RepeatUnitV0::Week => (old_val.repeat_value * 7, RepeatUnit::Day),
-                            RepeatUnitV0::Month => (old_val.repeat_value, RepeatUnit::Month),
-                            RepeatUnitV0::Year => (old_val.repeat_value * 12, RepeatUnit::Month),
-                        };
                         let new_val = Task {
                             text: old_val.text,
                             note: old_val.note,
                             category: old_val.category,
                             at: old_val.at,
-                            repeat_unit,
-                            repeat_value,
+                            postponed_at: None,
+                            repeat_unit: old_val.repeat_unit,
+                            repeat_value: old_val.repeat_value,
                             repeat_behavior: old_val.repeat_behavior,
                             completed: old_val.completed,
                         };
                         let new_body = utils::bc_se(&new_val).unwrap();
                         main.insert(key, new_body).unwrap();
                     }
-                    info!(logger, "completed task table migration for version 2");
+                    info!(logger, "completed task table migration for version 1");
                 },
                 2 => {
                     info!(logger, "task table on latest version");
