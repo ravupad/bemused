@@ -1,6 +1,6 @@
-@use 'base';
+@use '../../core/css/base';
 
-.start {
+.home {
     @extend %border;
     border-radius: 5px;
     border-width: 2px;
@@ -10,7 +10,6 @@
     background-color: aliceblue;
     grid-gap: 40px; 
     min-height: 100vh;
-
 }
 
 .button {

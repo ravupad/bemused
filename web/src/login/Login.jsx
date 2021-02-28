@@ -1,16 +1,16 @@
-import {React} from 'reactrx';
-import {observableElementToEvent, delayedRef, debug} from "reactrxutils";
+import {React} from '../core/reactrx';
+import {observableElementToEvent, delayedRef, debug} from "../core/reactrxutils";
 import {Subject, combineLatest, merge, from} from 'rxjs';
 import {
   scan, map, switchMap, withLatestFrom, tap, takeUntil, filter,
   startWith, share, catchError
 } from 'rxjs/operators';
-import {login} from 'client';
-import {blockingError} from 'Error';
-import styles from 'css/login';
+import {login} from '../core/client';
+import {blockingError} from '../core/error';
+import styles from './css/login.scss';
 import classNames from 'classnames/bind';
 
-const Login = ({setRoute, Link}) => {
+const Login = ({route, Link}) => {
   const cx = classNames.bind(styles);
   const delayer = new Subject();
   const ref = delayedRef(delayer);
@@ -51,7 +51,7 @@ const Login = ({setRoute, Link}) => {
     switchMap(([username, password]) => from(login(username, password)).pipe(
       catchError(ex => blockingError(ex.message)),
     )),
-    tap(() => setRoute("/home")),
+    tap(() => route.next("/home")),
     share(),
   );
   const buttonClass = merge(

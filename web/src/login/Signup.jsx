@@ -1,19 +1,13 @@
-import {
-  Observable, Subject, BehaviorSubject, combineLatest,
-  of, fromEvent, from, merge
-} from 'rxjs';
-import {
-  map, tap, takeUntil, scan, withLatestFrom, startWith, take, debounceTime, filter,
-  switchMap, share, catchError
-} from 'rxjs/operators';
-import {React} from 'reactrx';
-import {feedValue, getState, debug, delayedRef, observableElementToEvent} from 'reactrxutils';
+import { Subject, combineLatest, merge } from 'rxjs';
+import { map, tap, withLatestFrom, startWith,filter, switchMap, share } from 'rxjs/operators';
+import { React } from '../core/reactrx';
+import { delayedRef, observableElementToEvent } from '../core/reactrxutils';
 import cx from 'classnames';
-import s from 'css/login';
-import {signup, checkUsernameAvailability, login} from 'client';
-import {getMessageFromException, blockingErrorPromise} from 'Error';
+import s from './css/login.scss';
+import { signup, checkUsernameAvailability, login } from '../core/client';
+import { getMessageFromException, blockingErrorPromise } from '../core/error';
 
-const Signup = ({setRoute, Link}) => {
+const Signup = ({route, Link}) => {
   const delayer = new Subject();
   const ref = delayedRef(delayer);
   const usernameInput = new Subject();
@@ -59,7 +53,7 @@ const Signup = ({setRoute, Link}) => {
         .catch(ex => blockingErrorPromise(getMessageFromException(ex)).then(false))
     ),
     filter(result => result),
-    tap(() => setRoute("/home")),
+    tap(() => route.next("/home")),
   ).subscribe();
   return (
     <div class={s.login} after={() => delayer.complete()}>

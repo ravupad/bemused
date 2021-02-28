@@ -5,7 +5,8 @@
   "dependencies": {
     "classnames": "^2.2.6",
     "luxon": "^1.24.1",
-    "rxjs": "^6.5.5"
+    "rxjs": "^6.5.5",
+    "lodash": "^4.17.15"
   },
   "scripts": {
     "start": "webpack-dev-server --hot --mode development",
@@ -30,7 +31,8 @@
     "webpack": "^4.43.0",
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.11.0",
-    "workbox-webpack-plugin": "^6.1.0"
+    "workbox-webpack-plugin": "^6.1.0",
+    "@types/lodash": "^4.14.168"
   },
   "browserslist": [
     "Edge 16"

@@ -1,4 +1,4 @@
-import {setRoute} from "index";
+import {route} from "../index";
 
 const baseURL = '/api';
 let sessionId = localStorage.getItem('SessionId');
@@ -30,7 +30,7 @@ const fetch = (url, options) =>
       if (response.status === 401) {
         clearCredential();
         if (window.location.pathname !== '/login') {
-          setRoute("/login");
+          route.next("/login");
         }
         return Promise.reject("You are not logged in.");
       } else {

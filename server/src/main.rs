@@ -11,8 +11,6 @@ use std::result::Result as StdResult;
 type Result<T> = StdResult<T, Error>;
 type Request = hyper::Request<hyper::Body>;
 
-// mod db;
-
 #[tokio::main]
 async fn main() {
     let configuration = Configuration::new("Config.toml");
@@ -169,7 +167,6 @@ mod configuration {
         pub postgres: String,
         pub log_file: String,
         pub terminal_log: bool,
-        pub static_path: String,
     }
 
     impl Configuration {
@@ -457,24 +454,24 @@ mod task {
     use http::Method;
     use hyper::Body;
     use hyper::Response;
-    use serde::{Serialize, Deserialize};
     use chrono::{DateTime, Utc, Datelike};
     use sled::Tree;
     use slog::{Logger, info};
+    use serde::{Serialize, Deserialize};
 
     #[derive(Serialize, Deserialize, Debug)]
     pub enum RepeatUnit {
         Day,
         Month,
     }
-
+    
     #[derive(Serialize, Deserialize, Debug)]
     pub enum RepeatBehavior {
         FromCompleted,
         FromScheduledInFuture,
         FromScheduled,
     }
-    
+
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Task {
         pub text: String,
@@ -488,22 +485,6 @@ mod task {
         pub completed: bool,
     }
 
-    mod deprecated {
-        use super::*;
-
-        #[derive(Serialize, Deserialize)]
-        pub struct TaskV0 {
-            pub text: String,
-            pub note: String,
-            pub category: String,
-            pub at: DateTime<Utc>,
-            pub repeat_value: u64,
-            pub repeat_unit: RepeatUnit,
-            pub repeat_behavior: RepeatBehavior,
-            pub completed: bool,
-        }
-    }    
-
     pub struct Repository {
         main: Tree,
     }
@@ -516,28 +497,7 @@ mod task {
                     .map(|ivec| utils::bc_de(&ivec).unwrap())
                     .unwrap_or_else(|| 1);
             info!(logger, "task table version: {}", version);
-            use deprecated::*;
             match version {
-                1 => {
-                    for res in main.iter() {
-                        let (key, old_body) = res.unwrap();
-                        let old_val: TaskV0 = utils::bc_de(&old_body).unwrap();
-                        let new_val = Task {
-                            text: old_val.text,
-                            note: old_val.note,
-                            category: old_val.category,
-                            at: old_val.at,
-                            postponed_at: None,
-                            repeat_unit: old_val.repeat_unit,
-                            repeat_value: old_val.repeat_value,
-                            repeat_behavior: old_val.repeat_behavior,
-                            completed: old_val.completed,
-                        };
-                        let new_body = utils::bc_se(&new_val).unwrap();
-                        main.insert(key, new_body).unwrap();
-                    }
-                    info!(logger, "completed task table migration for version 1");
-                },
                 2 => {
                     info!(logger, "task table on latest version");
                 },
@@ -590,6 +550,7 @@ mod task {
 
     fn complete_task(repository: &Repository, user_id: u64, id: u64) -> Result<Option<DateTime<Utc>>> {
         let mut task = repository.find_by_id(user_id, id)?;
+        task.postponed_at = None;
         match task.repeat_value {
             0 => {
                 if task.completed != true {
@@ -635,7 +596,7 @@ mod task {
                 let id = path(&request, path_offset)?.parse()?;
                 let body = body(&mut request).await?;
                 let task = serde_json::from_slice(&body)?;
-                state.task.update(user_id, id, &task).map(response::void)
+                state.task.update(user_id, id, &task).map(response::json)
             }
             Method::DELETE => {
                 let task_id = path(&request, path_offset)?.parse()?;

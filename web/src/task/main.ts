@@ -1,102 +1,204 @@
-import { get, patch } from '../client';
-import { Store } from '../store';
+import { del, get, patch, post, put } from '../core/client';
 import { DateTime } from 'luxon';
+import { BehaviorSubject } from 'rxjs';
 
-/// Interfaces
 export type RepeatUnit = "Day" | "Month";
 
 export type RepeatBehavior = "FromScheduled" | "FromScheduledInFuture" | "FromCompleted";
 
-export interface Task {
+interface RawTask {
   text: string;
   note: string;
   completed: boolean;
-  at: DateTime;
-  postponed_at?: DateTime;
   repeat_value: number;
   repeat_unit: RepeatUnit;
   repeat_behavior: RepeatBehavior;
   category: string;
-}
-
-export type TaskWithId = [number, Task];
-
-export type RawTask = Omit<Task, 'at|postponed_at'> & { 
   at: string;
-  postponed_at: string;
+  postponed_at?: string;
 };
 
-export type RawTaskWithId = [number, RawTask];
-
-// Methods on Interface
-export function getPostponedOrScheduledTime(task: Task): DateTime {
-  return task.postponed_at != null ? task.postponed_at : task.at;
+export interface Task extends RawTask {
+  time: DateTime;
+  postponedTime?: DateTime;
+  id: number;
+  visible: boolean;
 }
 
-
-
-// Store
-export type TaskStore = {
-  tasks: Store<TaskWithId[]>;
-  selectedCategories: Store<Set<string>>;
-}
-
-/// Store Actions
-let taskStore: TaskStore = null;
-
-export const getTaskStore = async (): Promise<TaskStore> => {
-  if (taskStore != null) {
-    return taskStore;
+export class Task {
+  static new() {
+    const raw: RawTask = {
+      text: '',
+      note: '',
+      completed: false,
+      repeat_value: 0,
+      repeat_unit: "Day",
+      repeat_behavior: "FromScheduled",
+      category: '',
+      at: DateTime.local().toISO(),
+    }
+    return new Task([-1, raw]);
   }
-  const rawTasks: RawTaskWithId[] = await get('/task');
-  const tasks: TaskWithId[] = rawTasks.map(task => {
-    return [task[0], {
-      ...task[1], 
-      at: DateTime.fromISO(task[1].at),
-      postponed_at: task[1].postponed_at != null ? DateTime.fromISO(task[1].postponed_at) : null,
-    }];
-  });
-  let allCategories = new Set(tasks.map(task => task[1].category));
-  taskStore = {
-    tasks: new Store(tasks),
-    selectedCategories: new Store(allCategories),
-  };
-  return taskStore;
+
+  constructor(raw: [number, RawTask]) {
+    this.time = DateTime.fromISO(raw[1].at);
+    if (raw[1].postponed_at != null) {
+      this.postponedTime = DateTime.fromISO(raw[1].postponed_at);
+    }
+    this.id = raw[0];
+    this.visible = true;
+    Object.assign(this, raw[1]);
+  }
+
+  effectiveTime(): DateTime {
+    return this.postponedTime || this.time;
+  }
+
+  compare(b: Task): number {
+    return this.effectiveTime().diff(b.effectiveTime()).as("millisecond")
+  }
+
+  period(): number {
+    let today = DateTime.local().startOf("day");
+    let taskTime = this.effectiveTime().startOf("day");
+    let diff = taskTime.diff(today).as("days") + 2;
+    if (diff < 0) diff = 0;
+    if (diff > 4) diff = 4;
+    return diff;
+  }
+
+  toggleVisible() {
+    this.visible = !this.visible;
+  }
+};
+
+export class Category {
+  enabled: boolean = true;
+
+  constructor(public category: string) {  }
+
+  toggle() {
+    this.enabled = !this.enabled;
+  }
 }
 
-export const addTask = (task: TaskWithId) => (tasks: TaskWithId[]) => {
-  tasks.push(task);
+export class TaskStore extends BehaviorSubject<TaskStore> {
+  static instance: TaskStore;
+  static labels = ["past", "yesterday", "today", "tomorrow", "future"];
+  categories: Category[] = [];
+  tasks: Task[][] = [[], [], [], [], []];
+
+  constructor(tasks: Task[]) {
+    super(null);
+    new Set(tasks.map(t => t.category)).forEach(category => 
+      this.categories.push(new Category(category)));
+    tasks.forEach(task => this.tasks[task.period()].push(task));
+    super.next(this);
+  }
+
+  public static async getInstance(): Promise<TaskStore> {
+    if (TaskStore.instance) {
+      return TaskStore.instance;
+    }
+    const tasks = await getTasks();
+    TaskStore.instance = new TaskStore(tasks);
+    return TaskStore.instance;
+  }
+
+  public toggleCategory(index: number) {
+    this.categories[index].toggle();
+    this.tasks.forEach(tasks => tasks.forEach(task => {
+      if (task.category === this.categories[index].category) {
+        task.toggleVisible();
+      }
+    }));
+    super.next(this);
+  }
+
+  async createTask(task: Task) {
+    task.id = await createTask(task);
+    if (this.categories.find(category => task.category === category.category) == null) {
+      this.categories.push(new Category(task.category));
+    }
+    this.updateTaskPosition(task);
+  }
+
+  async updateTask(task: Task) {
+    await updateTask(task);
+    this.updateTaskPosition(task);
+  }
+
+  async deleteTask(task: Task) {
+    await deleteTask(task);
+    const oldPosition = this.findTask(task.id);
+    this.tasks[oldPosition[0]].splice(oldPosition[1], 1);
+    super.next(this);
+  }
+
+  async completeTask(task: Task) {
+    const newTime = await patchTask(task.id);
+    if (newTime == null) {
+      task.completed = true;
+    } else {
+      task.time = newTime;
+      task.postponedTime = null;
+    }
+    this.updateTaskPosition(task);
+  }
+
+  private updateTaskPosition(task: Task) {
+    const oldPosition = this.findTask(task.id);
+    const newPeriod = task.period();
+    console.log(oldPosition, newPeriod);
+    if (oldPosition !== null && newPeriod !== oldPosition[0]) {
+      this.tasks.splice(oldPosition[1], 1);
+    }
+    if (oldPosition === null || newPeriod !== oldPosition[0]) {
+      this.tasks[newPeriod].push(task);
+    }
+    this.tasks[newPeriod].sort((a, b) => a.compare(b));
+    super.next(this);
+  }
+
+  private findTask(id: number): [number, number] {
+    for (let i = 0; i < this.tasks.length; i++) {
+      for (let j = 0; j < this.tasks[i].length; j++) {
+        if (this.tasks[i][j].id === id) {
+          return [i, j];
+        }
+      }
+    }
+    return null;
+  }
+}
+
+async function createTask(task: Task): Promise<number> {
+  task.at = task.time.toISO();
+  task.postponed_at = task.postponedTime?.toISO();
+  return await put('/task', task);
+}
+
+async function updateTask(task: Task): Promise<void> {
+  task.at = task.time.toISO();
+  task.postponed_at = task.postponedTime?.toISO();
+  return await post(`/task/${task.id}`, task);
+}
+
+async function getTasks(): Promise<Task[]> {
+  let rawTasks: [number, RawTask][] = await get(`/task`);
+  let tasks = rawTasks.map(t => new Task(t));
+  tasks.sort((a, b) => a.compare(b));
   return tasks;
 }
 
-export const removeTask = (id: number) => (tasks: TaskWithId[]) => {
-  return tasks.filter(task => task[0] !== id);
+async function deleteTask(task: Task) {
+  return del(`/task/${task.id}`)
 }
 
-export const updateTask = (newTask: TaskWithId) => (tasks: TaskWithId[]) => {
-  return tasks.map(task => task[0] === newTask[0] ? newTask : task);
-}
-
-export const toggleCategorySelection = (category: string) => (categories: Set<string>) => {
-  if (categories.has(category)) {
-    categories.delete(category);
-  } else {
-    categories.add(category);
+async function patchTask(id: number): Promise<DateTime> {
+  let newDate: string = await patch(`/task/${id}/complete`);
+  if (newDate == null) {
+    return null;
   }
-  return categories;
+  return DateTime.fromISO(newDate);
 }
-
-export const getNewTask = (): Task => ({
-  text: "Text",
-  note: "Note",
-  completed: false,
-  at: DateTime.local(),
-  repeat_value: 0,
-  repeat_unit: "Day",
-  repeat_behavior: "FromScheduled",
-  category: "Task"
-});
-
-
-/// Network
-export const patchTask = (id: number): Promise<string> => patch(`/task/${id}/complete`);

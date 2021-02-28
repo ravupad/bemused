@@ -1,135 +1,103 @@
-import { React } from '../reactrx';
-import style from './list.scss';
+import { React } from '../core/reactrx';
+import style from './css/list.scss';
 import classnames from 'classnames/bind';
-import { DateTime } from 'luxon';
-import { map, tap } from 'rxjs/operators';
-import { getPostponedOrScheduledTime, getTaskStore, TaskStore, toggleCategorySelection } from './main';
-import { combineLatest, Observable } from 'rxjs';
-import { Task, TaskWithId } from './main';
-import { RouterComponentProps } from '../Router';
-import { setRoute, sleep } from '../index';
+import { finalize, map, take, takeUntil, tap, withLatestFrom } from 'rxjs/operators';
+import { Observable, Subject } from 'rxjs';
+import { Category, Task, TaskStore } from './main';
+import { RouterComponentProps } from '../core/router';
+import { List, ViewProps } from '../core/list';
 
 const cx = classnames.bind(style);
 
-export const RouteList = ({setRoute}: RouterComponentProps): Observable<JSX.Element> => {
+export const RouterTaskList = ({route}: RouterComponentProps): Observable<JSX.Element> => {
   return new Observable(view => {
+    route.pipe(take(1)).subscribe(() => view.complete());
     view.next(<div>Loading</div>);
-    getTaskStore().then(store => view.next(<List setRoute={setRoute} store={store}/>));
+    TaskStore.getInstance().then(store => {
+      view.next(<TaskList {...{route, store}}/>);
+    });
   });
 }
 
 type ListProps = {
-  setRoute: (route: string) => void;
+  route: Subject<string>;
   store: TaskStore;
 }
 
-function List({setRoute, store}: ListProps): JSX.Element {
-  let filters = store.tasks.value.pipe(
-    map(tasks => new Set(tasks.map(task => task[1].category))),
-    map(categories => Array.from(categories)),
-    map(categories => categories.map(category => <FilterButton store={store} category={category}/>)),
-  );
-  let currentTask = store.tasks.value.pipe(
-    map(tasks => tasks.sort((t1, t2) => {
-      let a = t1[1].postponed_at != null ? t1[1].postponed_at : t1[1].at;
-      let b = t2[1].postponed_at != null ? t2[1].postponed_at : t2[1].at;
-      return a.diff(b).as("milliseconds");
-    })),
-    map(tasks => tasks[0]),
-  );
-  currentTask.subscribe(t => {
-    if (Notification.permission == 'granted') {
-      sleep(getPostponedOrScheduledTime(t[1]).diff(DateTime.local()).as("milliseconds"))
-          .then(() => {
-            navigator.serviceWorker.getRegistration().then(function(reg) {
-              reg.showNotification(`Time for ${t[1].text}`);
-            });
-          });
-    }
+function TaskList({route, store}: ListProps): JSX.Element {
+  const observable = store.pipe(takeUntil(route));
+  let filterButton = (props: ViewProps<Category>) => FilterButton({...props, store});
+  let filtersList = observable.pipe(map(value => value.categories));
+  let filtersElement = (<List list={filtersList} view={filterButton}/>);
+  let periodViews = TaskStore.labels.map((timeRelative, i) => {
+    let tasks = observable.pipe(map(v => v.tasks[i]));
+    return (<MiniTasks {...{route, store, timeRelative, tasks}}/>);
   });
-  let tasks = combineLatest([store.tasks.value, store.selectedCategories.value]).pipe(
-    map(([tasks, categories]) => tasks.filter(task => categories.has(task[1].category))),
-    map(tasks => tasks.sort((a, b) => a[1].at.diff(b[1].at).as("milliseconds"))),
-    map(tasks => {
-      const timeRelativeCategories: Map<RelativeDuration, TaskWithId[]> = new Map();
-      relativeDurations.forEach(duration => timeRelativeCategories.set(duration, []));
-      tasks.forEach(task => timeRelativeCategories.get(taskTimeRelativeToToday(task[1])).push(task));
-      return timeRelativeCategories;
-    }),
-    map(tasks => relativeDurations.map(duration => 
-      <VMiniContainer timeRelative={duration} tasks={tasks.get(duration)} store={store} setRoute={setRoute}/>)
-    ),
-  );
-  let handleNewTask = () => setRoute("/task/new");
+  let handleNewTask = () => route.next("/task/new");
   return (
     <div class={cx("task-container")}>
       <h2 class={cx("page-title")}>Tasks</h2>
-      <div class={cx('filters-container')}>{filters}</div>
-      {currentTask.pipe(map(t => <CurrentTask task={t} store={store}/>))}
-      {tasks}
-      <br/>
-      <button onclick={handleNewTask} class={cx('create-class-button')}>+</button>
+      <div class={cx('filters-container')}>{filtersElement}</div>
+      {periodViews}
+      <button onclick={handleNewTask} class={cx('create-class-button')}>
+        <div class={cx('add-icon')}>+</div>
+      </button>
     </div>
   );
 };
 
-function FilterButton({store, category}: {store: TaskStore, category: string}): JSX.Element {
-  let className = store.selectedCategories.value.pipe(
-    map(c => c.has(category)), map(isSelected => isSelected ? cx('filter-selected') : ''));
-  let toggleFilter = () => store.selectedCategories.action.next(toggleCategorySelection(category));
-  return <button onclick={toggleFilter} class={className}>{category}</button>;
-}
+type FilterButtonProps = {
+  store: TaskStore;
+  observable: Observable<Category>;
+  index: number;
+};
 
-function CurrentTask({task, store}: {task: TaskWithId, store: TaskStore}): JSX.Element {
-  return (
-    <div class={cx("mini-container", "current-task")} onclick={() => setRoute(`task/${task[0]}`)}>
-      <div class={cx("mini-task-header")}>Current Task</div>
-      <VMini id={task[0]} task={task[1]} store={store} setRoute={setRoute} />
-    </div>
-  );
+function FilterButton({store, observable, index}: FilterButtonProps): JSX.Element {
+  let category = observable.pipe(map(v => v.category));
+  let className = observable.pipe(map(v => cx('filter', {
+    'filter-selected': v.enabled
+  })));
+  let buttonClick = () => store.toggleCategory(index);
+  return <button onclick={buttonClick} class={className}>{category}</button>;
 }
 
 type VMiniContainerProps = {
-  timeRelative: RelativeDuration;
-  tasks: TaskWithId[]; 
+  timeRelative: string;
+  tasks: Observable<Task[]>;
   store: TaskStore; 
-  setRoute: (route: string) => void;
+  route: Subject<string>;
 }
 
-function VMiniContainer({timeRelative, tasks, store, setRoute}: VMiniContainerProps): JSX.Element {
+function MiniTasks({timeRelative, tasks, store, route}: VMiniContainerProps): JSX.Element {
+  let view = (props: ViewProps<Task>) => MiniTask({...props, route, store});
   return (
     <div class={cx('mini-container', timeRelative)}>
       <div class={cx('mini-task-header')}>{timeRelative}</div>
-      {tasks.map(task => <VMini id={task[0]} task={task[1]} store={store} setRoute={setRoute}/>)}
+      <List list={tasks} view={view}/>
     </div>
   );
 }
 
-type VMiniProps = {
-  id: number; 
-  task: Task; 
+type MiniTaskProps = {
+  observable: Observable<Task>;
   store: TaskStore; 
-  setRoute: (route: string) => void;
+  route: Subject<string>;
 }
 
-function VMini({id, task, store, setRoute}: VMiniProps): JSX.Element {
-  let taskClass = cx('mini-task', {'completed': task.completed});
-  let expandTask = () => setRoute(`task/${id}`);
-  return <div onclick={expandTask} class={taskClass}>{task.text}</div>;
-}
-
-const relativeDurations = ["past", "yesterday", "today", "tomorrow", "future"] as const;
-type RelativeDuration = typeof relativeDurations[number];
-
-function taskTimeRelativeToToday(task: Task): RelativeDuration {
-  let today = DateTime.local().startOf("day");
-  let taskTime = task.at.startOf("day");
-  let diff = today.plus({days: -1}).diff(taskTime).as("days");
-  switch (diff) {
-    case 0: return "yesterday";
-    case -1: return "today";
-    case -2: return "tomorrow";
-    default:
-      return diff > 0 ? "past" : "future";
-  }
+function MiniTask({observable, store, route}: MiniTaskProps): JSX.Element {
+  let taskClass = observable.pipe(map(task => cx('mini-task', {
+    'completed': task.completed,
+    'hide': !task.visible,
+  })));
+  let text = observable.pipe(map(task => task.text));
+  let expandTaskClick = new Subject();
+  expandTaskClick.pipe(
+    withLatestFrom(observable),
+    tap(([_, task]) => route.next(`task/${task.id}`))
+  ).subscribe();
+  return (
+    <div onclick={() => expandTaskClick.next(null)} class={taskClass}>
+      {text}
+    </div>
+  );
 }

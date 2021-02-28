@@ -1,14 +1,15 @@
+import { Subject } from 'rxjs';
 import { React } from './reactrx';
 
 export type LinkProps = {
-  setRoute: (route: string) => void;
+  route: Subject<string>;
   href?: string;
   props: any[];
 }
 
-function Link({setRoute, href, ...props}: LinkProps, children: JSX.Element | JSX.Element[])  {
+function Link({route, href, ...props}: LinkProps, children: JSX.Element | JSX.Element[])  {
   const changeRoute = (e: Event) => {
-    setRoute(href);
+    route.next(href);
     e.preventDefault();
     return false;
   };

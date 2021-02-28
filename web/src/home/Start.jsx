@@ -1,11 +1,11 @@
-import {React} from 'reactrx';
-import {verifySession} from 'client';
-import s from 'css/start';
-import Link from "Link";
+import {React} from '../core/reactrx';
+import {verifySession} from '../core/client';
+import s from './css/start.scss';
+import Link from "../core/link";
 
-const Start = ({setRoute, Link}) => {
+const Start = ({route, Link}) => {
   verifySession()
-    .then(() => setRoute("/home"))
+    .then(() => route.next("/home"))
     .catch(() => {});
   return (
     <div class={s.start}>

@@ -3,5 +3,3 @@ sled_path = "sled_db"
 postgres = "postgres://ravi:khastgir@127.0.0.1:5432/bemused"
 log_file = "main.log"
 terminal_log = true
-static_path = "/home/ravi/programming/bemused/web2/build"
-

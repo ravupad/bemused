@@ -1,7 +1,0 @@
-# /target/ will only ignore target folder in current directory
-# target/ will ignore target folder in any subdirectory
-/target/
-.idea
-/database/
-sled_db/
-

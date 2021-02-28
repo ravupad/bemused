@@ -17,3 +17,6 @@ logs
 .project
 *.iml
 out
+target
+database
+sled_db

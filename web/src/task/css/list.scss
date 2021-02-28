@@ -1,35 +1,47 @@
-@use '../css/base';
+@use '../../core/css/base';
 
 .task-container {
-    background-color: honeydew;
     display: flex;
     flex-flow: column;
 }
 
 .page-title {
     width: fit-content;
-    font-size: 4em;
+    font-size: 2.5em;
     margin: 0 auto;
     padding-top: 20px;
 }
 
-.filters-container span {
-    margin: 2em 0;
+.filters-container {
+    position: sticky;
+    top: 15px;
+    width: 95%;
+    margin: 10px auto;
+    padding: 15px 0;
     display: flex;
     flex-flow: row wrap;
-    justify-content: space-around;
+    background-color: silver;
+    border-radius: 8px;
+    border: 2px black solid;
 }
 
-.filters-container button {
-    padding: 0.5em 0.5em;
-    font-size: 2.25em;
+.filter {
+    width: 18%;
+    padding: 0.5em 1%;
+    margin: 0.25em 1%;
+    font-size: 1.15em;
     font-weight: bold;
-    border-radius: 0.5em;
+    border: 1px black solid;
+    border-radius: 2px;
+    cursor: pointer;    
+    overflow: hidden;
+    background-color: grey;
+    color: darkgrey;
 }
 
 .filter-selected {
-    background-color: green;
-    color: white;
+    background-color: white;
+    color: black;
 }
 
 .mini-container {
@@ -40,26 +52,17 @@
     margin-left: 2.5%;
 }
 
-.current-task .mini-task-header {
-    font-size: 3em;
-    font-weight: normal;
-}
-
-.current-task .mini-task {
-    font-size: 4em;
-    font-weight: bold;
-}
-
 .mini-task-header {
     font-weight: 900;
     text-transform: capitalize;
     margin: 0 0 10px 0;
-    font-size: 2em;
+    font-size: 1.75em;
 }
 
 .mini-task {
-    font-size: 1.8em;
+    font-size: 1.5em;
     margin: 10px 0;
+    cursor: pointer;
 }
 
 .mini-task::before {
@@ -85,16 +88,19 @@
     border-radius: 50%;
     box-shadow: 0px 0px 9px -5px black;
     color: #178a40;
-    font-size: 12em;
     font-weight: bolder;
-    width: 8rem;
-    height: 8rem;
+    width: 6rem;
+    height: 6rem;
     position: fixed;
-    bottom: 6rem;
-    right: 6rem;
+    bottom: 5%;
+    right: 10%;
     display: flex;
-    align-items: center;
     justify-content: center;
+}
+
+.add-icon {
+    transform: TranslateY(-50%);
+    font-size: 10em;
 }
 
 @media only screen and (min-width: 1000px) {
@@ -105,22 +111,11 @@
         border-radius: 5px;
     }
 
-    .filters-container button {
-        font-size: 1.75em;
-    }
-
     .current-task .mini-task-header {
         font-size: 2em;
     }
     
     .current-task .mini-task {
         font-size: 3em;
-    }
-
-    .create-class-button {
-        right: 18rem;
-        font-size: 10rem;
-        width: 7rem;
-        height: 7rem;
     }
 }

@@ -5,6 +5,10 @@
 * Generic Sled Layer
 * Reactrx optimizations
 * Timer (duration) for tasks
+* WASM
+* Webpack alternative Snowpack
+* File structuring for web
+* Plain CSS instead of SCSS
 
 # DONE
 * Makefile for deploying to server

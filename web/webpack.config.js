@@ -32,7 +32,7 @@ module.exports = (env, argv) => ({
   },
   module: {
     rules: [
-      {
+     {
         test: /\.tsx?$/,
         use: 'ts-loader',
         exclude: /node_modules/,
@@ -83,7 +83,7 @@ module.exports = (env, argv) => ({
       filename: '[name].[hash].css'
     }),
     new HtmlWebpackPlugin({
-      template: 'src/index.html'
+      template: 'index.html'
     }),
     new CopyPlugin({
       patterns: ["public"],
