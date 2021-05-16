@@ -1,24 +1,20 @@
-push: clean build push-web push-backend
+push: package
+	scp package.tar ravi@13.71.112.248:./
+	ssh ravi@13.71.112.248 "tar -xf package.tar && cd temp && make deploy"
 
-push-web: clean-web build-web
-	scp -r web/dist ravi@13.71.112.248:./
-	ssh ravi@13.71.112.248 "cd /srv/bemused/deployment && sudo rm -rf dist && sudo mv ~/dist ./"
+package: build
+	rm -rf temp && mkdir temp
+	mv web/dist temp/web-dist
+	mv server/target/release/bemused-server temp/
+	cp -r conf/* temp/
+	tar -cf package.tar temp
+	rm -rf temp
 
-push-backend: build-backend
-	scp backend/target/release/rustserver ravi@13.71.112.248:./
-	ssh ravi@13.71.112.248 "cd /srv/bemused/deployment && sudo rm rustserver && sudo mv ~/rustserver ./ && sudo systemctl restart bemused.service"
-
-build: build-backend build-web
-
-build-backend:
-	cd backend && cargo build --release
-
-build-web:
+build:
+	cd server && cargo build --release
 	cd web && npm run build
 
-clean: clean-web
-
-clean-web:
-	rm -rf web/dist
-
-.PHONY: build-backend build-web build clean-web clean push-web push-backend push
+# With phony target name is not confused with file name
+# e.g. if a file with name build exists, then target with
+# name build will not be associated with that file.
+.PHONY: build push

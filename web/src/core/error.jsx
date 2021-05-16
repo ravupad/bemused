@@ -1,5 +1,5 @@
 import {Observable} from 'rxjs';
-import {React} from './reactrx';
+import {React} from '@raviupadhyay/reactrx';
 import s from './css/error.scss';
 
 function blockingError(message) {

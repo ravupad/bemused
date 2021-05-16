@@ -1,0 +1,10 @@
+[Unit]
+Description=Bemused
+After=network.target
+
+[Service]
+ExecStart=/srv/bemused/deployment/rustserver
+WorkingDirectory=/srv/bemused/deployment
+
+[Install]
+WantedBy=multi-user.target

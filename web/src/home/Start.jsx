@@ -1,7 +1,6 @@
-import {React} from '../core/reactrx';
+import {React} from '@raviupadhyay/reactrx';
 import {verifySession} from '../core/client';
 import s from './css/start.scss';
-import Link from "../core/link";
 
 const Start = ({route, Link}) => {
   verifySession()

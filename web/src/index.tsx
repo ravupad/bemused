@@ -1,25 +1,24 @@
-import Router, {Route, BrowserHistory} from "./core/router";
 import './core/css/index';
-import { React, render } from './core/reactrx';
+import {React, render, Router} from '@raviupadhyay/reactrx';
 import Start from './home/Start';
 import Login from './login/Login';
 import Signup from './login/Signup';
 import Home from './home/Home';
-import { RouterTaskList as TaskList } from './task/list';
-import { RouteTask as Task } from './task/task';
+import {RouterTaskList as TaskList} from './task/list';
+import {RouteTask as Task} from './task/task';
 
 document.title = "Bemused";
-const route = new BrowserHistory();
+const route = new Router.BrowserHistory();
 
 render(
-  <Router route={route}>
-    <Route path="/" component={Start}/>
-    <Route path="/login" component={Login}/>
-    <Route path="/signup" component={Signup}/>
-    <Route path="/home" component={Home}/>
-    <Route path="/task" component={TaskList}/>
-    <Route path="/task/:id" component={Task}/>
-  </Router>,
+  <Router.default route={route}>
+    <Router.Route path="/" component={Start}/>
+    <Router.Route path="/login" component={Login}/>
+    <Router.Route path="/signup" component={Signup}/>
+    <Router.Route path="/home" component={Home}/>
+    <Router.Route path="/task" component={TaskList}/>
+    <Router.Route path="/task/:id" component={Task}/>
+  </Router.default>,
   document.getElementById('app')
 );
 

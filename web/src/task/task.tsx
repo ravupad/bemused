@@ -1,16 +1,15 @@
-import { React } from '../core/reactrx';
+import { React, Router } from '@raviupadhyay/reactrx';
 import { DateTime } from 'luxon';
 import { blockingErrorPromise } from '../core/error';
 import { TaskStore, Task } from './main';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
-import { RouterComponentProps } from '../core/router';
 import classnames from 'classnames/bind';
 import style from './css/task.scss';
 import { map, take, tap } from 'rxjs/operators';
 
 const cx = classnames.bind(style);
 
-export const RouteTask = ({route, params}: RouterComponentProps): Observable<JSX.Element> => {
+export const RouteTask = ({route, params}: Router.RouterComponentProps): Observable<JSX.Element> => {
   const id = params.get('id');
   return new Observable(view => {
     route.pipe(take(1)).subscribe(() => view.complete());
@@ -71,39 +70,39 @@ function TaskView({route, store, task, create}: TaskProps) {
     <div class={cx('task-container')}>
       <div class={modal.pipe(map(val => cx(val)))}>Wait ...</div>
       <input class={cx('text')} value={task.text} oninput={(e: any) => task.text = e.target.value}/>
+      <div class={cx('label')}>Note</div>
       <textarea class={cx('note')} style="width: 100px" value={task.note} oninput={(e: any) => task.note = e.target.value}/>
+      <div class={cx('label')}>Scheduled At</div>
       <div class={cx('row')}>
-        <div class={cx('label')}>Scheduled At</div>
         <input class={cx('value')} type="date" value={state.atDate}
             oninput={(e: any) => state.atDate = e.target.value}/>
         <input class={cx('value')} type="time" value={state.atTime} 
             oninput={(e: any) => state.atTime = e.target.value}/>
-      </div>
+      </div>      
+      <div class={cx('label')}>Postponed To</div>
       <div class={cx('row')}>
-        <div class={cx('label')}>Postponed To</div>
         <input class={cx('value')} type="date" value={state.postponedDate}
             oninput={(e: any) => state.postponedDate = e.target.value}/>
         <input class={cx('value')} type="time" value={state.postponedTime}
-            oninput={(e: any) => state.postponedTime = e.target.value}/>            
+            oninput={(e: any) => state.postponedTime = e.target.value}/>
       </div>
+      <div class={cx('label')}>Category</div>
+      <input class={cx('value', 'category')} value={task.category} 
+          oninput={(e: any) => task.category = e.target.value}/>
+      <div class={cx('label')}>Repeat After</div>
       <div class={cx('row')}>
-        <div class={cx('label')}>Category</div>
-        <input class={cx('value', 'category')} value={task.category} 
-            oninput={(e: any) => task.category = e.target.value}/>
-      </div>      
-      <div class={cx('row')}>
-        <div class={cx('label')}>Repeat After</div>
         <input class={cx('value', "schedule-value")} type="number" min="0" value={task.repeat_value}
-          oninput={(e: any) => task.repeat_value=parseInt(e.target.value)}/>
-        <select class={cx('value')} value={task.repeat_unit} oninput={(e: any) => task.repeat_unit = e.target.value}>
+            oninput={(e: any) => task.repeat_value=parseInt(e.target.value)}/>
+        <select class={cx('value', 'select')} value={task.repeat_unit} 
+            oninput={(e: any) => task.repeat_unit = e.target.value}>
           <option>Day</option>
           <option>Month</option>
         </select>
-        <select class={cx('value')} value={task.repeat_behavior} oninput={(e: any) => task.repeat_behavior = e.target.value}>
+        {/* <select class={cx('value')} value={task.repeat_behavior} oninput={(e: any) => task.repeat_behavior = e.target.value}>
           <option value="FromScheduled">from schedule</option>
           <option value="FromScheduledInFuture">in future</option>
           <option value="FromCompleted">from completion</option>
-        </select>        
+        </select>*/}
       </div>
       <div  class={cx('button-wrapper')}>
         {task.id != -1 ? <button class={cx('button')} onclick={asyncAction(updateHandler)}>Update</button> : []}

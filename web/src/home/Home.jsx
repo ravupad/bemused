@@ -1,4 +1,4 @@
-import {React} from '../core/reactrx';
+import {React} from '@raviupadhyay/reactrx';
 import s from './css/home.scss';
 import {logout, verifySession} from '../core/client';
 

@@ -1,15 +1,13 @@
-import { React } from '../core/reactrx';
+import { React, Router, List } from '@raviupadhyay/reactrx';
 import style from './css/list.scss';
 import classnames from 'classnames/bind';
 import { finalize, map, take, takeUntil, tap, withLatestFrom } from 'rxjs/operators';
 import { Observable, Subject } from 'rxjs';
 import { Category, Task, TaskStore } from './main';
-import { RouterComponentProps } from '../core/router';
-import { List, ViewProps } from '../core/list';
 
 const cx = classnames.bind(style);
 
-export const RouterTaskList = ({route}: RouterComponentProps): Observable<JSX.Element> => {
+export const RouterTaskList = ({route}: Router.RouterComponentProps): Observable<JSX.Element> => {
   return new Observable(view => {
     route.pipe(take(1)).subscribe(() => view.complete());
     view.next(<div>Loading</div>);
@@ -26,9 +24,9 @@ type ListProps = {
 
 function TaskList({route, store}: ListProps): JSX.Element {
   const observable = store.pipe(takeUntil(route));
-  let filterButton = (props: ViewProps<Category>) => FilterButton({...props, store});
+  let filterButton = (props: List.ViewProps<Category>) => FilterButton({...props, store});
   let filtersList = observable.pipe(map(value => value.categories));
-  let filtersElement = (<List list={filtersList} view={filterButton}/>);
+  let filtersElement = (<List.List list={filtersList} view={filterButton}/>);
   let periodViews = TaskStore.labels.map((timeRelative, i) => {
     let tasks = observable.pipe(map(v => v.tasks[i]));
     return (<MiniTasks {...{route, store, timeRelative, tasks}}/>);
@@ -69,11 +67,11 @@ type VMiniContainerProps = {
 }
 
 function MiniTasks({timeRelative, tasks, store, route}: VMiniContainerProps): JSX.Element {
-  let view = (props: ViewProps<Task>) => MiniTask({...props, route, store});
+  let view = (props: List.ViewProps<Task>) => MiniTask({...props, route, store});
   return (
     <div class={cx('mini-container', timeRelative)}>
       <div class={cx('mini-task-header')}>{timeRelative}</div>
-      <List list={tasks} view={view}/>
+      <List.List list={tasks} view={view}/>
     </div>
   );
 }

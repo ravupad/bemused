@@ -7,6 +7,27 @@ const WorkboxPlugin = require('workbox-webpack-plugin');
 
 const dev = (argv) => argv.mode === 'development';
 
+const styleLoader = (argv) => dev(argv) ? 'style-loader' : MiniCssExtractPlugin.loader;
+
+const cssLoader = () => ({
+  loader: 'css-loader',
+  options: {
+    modules: true,
+  },
+});
+
+const babelLoader = () => ({
+  loader: 'babel-loader',
+  options: {
+    presets: [              
+      "@babel/preset-env",
+      "@babel/preset-react",
+    ],
+    plugins: [
+    ].filter(Boolean),
+  },
+});
+
 module.exports = (env, argv) => ({
   mode: argv.mode,
   devtool: dev(argv) ? 'inline-source-map' : false,
@@ -18,12 +39,7 @@ module.exports = (env, argv) => ({
   },
   resolve: {
     extensions: [
-      '.js',
-      '.jsx',
-      '.ts',
-      '.tsx',
-      '.css',
-      '.scss',
+      '.js', '.jsx', '.ts', '.tsx', '.css', '.scss'
     ],
     alias: {
       css: path.resolve(__dirname, 'src/css'),
@@ -35,46 +51,22 @@ module.exports = (env, argv) => ({
      {
         test: /\.tsx?$/,
         use: 'ts-loader',
-        exclude: /node_modules/,
+        // exclude: /node_modules/,
       },
       {
         test: /\.(js|jsx)$/,
         exclude: /node_modules/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: [              
-              "@babel/preset-env",
-              "@babel/preset-react",
-            ],
-            plugins: [
-            ].filter(Boolean),
-          },
-        },
+        use: babelLoader(),
       },
       {
-        test: /\.(css|scss)$/,
+        test: /\.(css)$/,
         exclude: /node_modules/,
-        use: dev(argv)
-           ? 'style-loader'
-           : MiniCssExtractPlugin.loader
-      },
-      {
-        test: /\.(css|scss)$/,
-        exclude: /node_modules/,
-        use: {
-          loader: 'css-loader',
-          options: {
-            modules: {
-              localIdentName: "[local]_[hash:base64:5]",
-            },
-          },
-        },
+        use: [styleLoader(argv), cssLoader()]
       },
       {
         test: /\.(scss)$/,
         exclude: /node_modules/,
-        use: ['sass-loader']
+        use: [styleLoader(argv), cssLoader(), 'sass-loader']
       }
     ],
   },
