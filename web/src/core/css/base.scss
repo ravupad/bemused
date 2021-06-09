@@ -7,8 +7,9 @@
 }
 
 .centered {
-    display: grid;
-    place-items: center center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .flexRow {
@@ -54,11 +55,19 @@
     padding-bottom: 1rem;
 }
 
+%m-ub-1 {
+    margin-bottom: 1rem;
+    margin-top: 1rem;
+}
+
+
 %clr-darkgrey {
     color: darkgray;
 }
 
-.f-l { float: left; }
+.f-l { 
+    float: left; 
+}
 
 .f-r { float: right; }
 
@@ -68,10 +77,6 @@
     border: 1px solid black;
 }
 
-.m-ub-2 {
-    margin-bottom: 0.5rem;
-    margin-top: 0.5rem;
-}
 
 .m-r-2 { margin-right: 0.5rem; }
 

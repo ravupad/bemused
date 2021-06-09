@@ -1,5 +1,6 @@
 push: package
 	scp package.tar ravi@13.71.112.248:./
+	rm package.tar
 	ssh ravi@13.71.112.248 "tar -xf package.tar && cd temp && make deploy"
 
 package: build
@@ -17,4 +18,4 @@ build:
 # With phony target name is not confused with file name
 # e.g. if a file with name build exists, then target with
 # name build will not be associated with that file.
-.PHONY: build push
+.PHONY: build push package

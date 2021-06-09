@@ -23,10 +23,11 @@
     background-color: silver;
     border-radius: 8px;
     border: 2px black solid;
+
+    span { width: 100%; }
 }
 
 .filter {
-    width: 18%;
     padding: 0.5em 1%;
     margin: 0.25em 1%;
     font-size: 1.15em;
@@ -83,6 +84,7 @@
 .future { background-color: lightseagreen; }
 
 .create-class-button {
+    @extend .centered;
     background-color: #e6ffbf;
     border: 1px solid silver;
     border-radius: 50%;
@@ -94,12 +96,9 @@
     position: fixed;
     bottom: 5%;
     right: 10%;
-    display: flex;
-    justify-content: center;
 }
 
 .add-icon {
-    transform: TranslateY(-50%);
     font-size: 10em;
 }
 
