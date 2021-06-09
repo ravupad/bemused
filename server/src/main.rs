@@ -304,7 +304,7 @@ mod state {
 mod user {
     use crate::error::Error;
     use crate::Result;
-    use crate::utils::sled::in_transaction as it;
+    use crate::utils::{sled::in_transaction, bc_de};
     use crate::request::path;
     use crate::Request;
     use crate::response;
@@ -325,18 +325,18 @@ mod user {
         username: String,
         password: String,
     }
-    
+
+    const USER_MAIN_TABLE       : &'static str = "user_main";
+    const USER_INDEX_USERNAME   : &'static str = "user_idx_username";
+    const USER_SESSION_TABLE    : &'static str = "user_session";
+    const SESSION_ID_HEADER     : &'static str = "SessionId";
+
     pub struct Repository {
         main: Tree,
         username: Tree,
         session: Tree,
     }
     
-    const USER_MAIN_TABLE: &'static str = "user_main";
-    const USER_INDEX_USERNAME: &'static str = "user_idx_username";
-    const USER_SESSION_TABLE: &'static str = "user_session";
-    const SESSION_ID_HEADER: &'static str = "SessionId";
-
     impl Repository {
         pub fn new(db: &sled::Db) -> Result<Self> {
             Ok(Repository {
@@ -348,9 +348,9 @@ mod user {
 
         fn save(&self, user: &User) -> Result<u64> {
             (&self.main, &self.username).transaction(|(main_tx, username_tx)| {
-                let user_id = it::generate_id(main_tx)?;
-                let key = it::serialize(&user_id)?;
-                let value = it::serialize(user)?;
+                let user_id = in_transaction::generate_id(main_tx)?;
+                let key = in_transaction::serialize(&user_id)?;
+                let value = in_transaction::serialize(user)?;
                 if username_tx.insert(user.username.as_bytes(), &key[..])?.is_some() {
                     return abort(Error::UsernameAlreadyExists);
                 }
@@ -360,36 +360,30 @@ mod user {
         }
 
         fn create_session(&self, username: &str, password: &str) -> Result<Uuid> {
-            let user_id = self.username.get(username.as_bytes())
-                .map_err(Error::from)?
+            let user_id = self.username.get(username.as_bytes())?
                 .ok_or(Error::UsernameNotFound)?;
-            let user_raw = self.main.get(&user_id)
-                .map_err(Error::from)?
-                .ok_or(Error::UsernameNotFound)?;
-            let user: User = bincode::deserialize(&user_raw)
-                .map_err(Error::from)?;
+            let user: User = self.main.get(&user_id)?
+                .ok_or(Error::UsernameNotFound)
+                .and_then(|raw| bc_de(&raw))?;
             if user.password != password {
                 return Err(Error::PasswordDoesNotMatch);
             }
             let session_id = Uuid::new_v4();
-            self.session.insert(session_id.as_bytes(), user_id)
-                .map_err(Error::from)?;
+            self.session.insert(session_id.as_bytes(), user_id)?;
             Ok(session_id)
         }
 
         fn delete_session(&self, session_id: Uuid) -> Result<()> {
-            self.session.remove(session_id.as_bytes())
-                .map_err(Error::from)
-                .map(|_| ())
+            self.session.remove(session_id.as_bytes())?;
+            Ok(())
         }
 
         fn username_available(&self, username: &str) -> Result<bool> {
-            self.username.contains_key(username.as_bytes()).map_err(Error::from)
+            Ok(self.username.contains_key(username.as_bytes())?)
         }
 
         fn get_session_user_id(&self, session_id: Uuid) -> Result<u64> {
-            let val = self.session.get(session_id.as_bytes())
-                .map_err(Error::from)?
+            let val = self.session.get(session_id.as_bytes())?
                 .ok_or(Error::SessionDoesNotExist)?;
             Ok(u64::from_be_bytes(val.as_ref().try_into().unwrap()))
         }
@@ -412,8 +406,7 @@ mod user {
                     username: path(&request, path_offset)?.to_string(),
                     password: path(&request, path_offset)?.to_string(),
                 };
-                state.user.save(&mut user)
-                    .map(response::void)
+                state.user.save(&mut user).map(response::void)
             }
             Method::POST => {
                 let username = path(&request, path_offset)?;
@@ -425,8 +418,7 @@ mod user {
             Method::DELETE => {
                 let session_id = path(&request, path_offset)?;
                 let uuid = Uuid::parse_str(session_id).map_err(Error::from)?;
-                state.user.delete_session(uuid)
-                    .map(response::void)
+                state.user.delete_session(uuid).map(response::void)
             }
             Method::GET => {
                 match path(&request, path_offset) {
@@ -454,7 +446,7 @@ mod task {
     use http::Method;
     use hyper::Body;
     use hyper::Response;
-    use chrono::{DateTime, Utc, Datelike};
+    use chrono::{DateTime, Utc, Datelike, Duration};
     use sled::Tree;
     use slog::{Logger, info};
     use serde::{Serialize, Deserialize};
@@ -539,42 +531,61 @@ mod task {
         pub fn update(&self, user_id: u64, id: u64, task: &Task) -> Result<()> {
             let key = utils::bc_se(&(user_id, id))?;
             let value = utils::bc_se(task)?;
-            self.main.insert(key, value).map_err(Error::from).map(|_| ())
+            self.main.insert(key, value)?;
+            Ok(())
         }
 
         pub fn delete(&self, user_id: u64, id: u64) -> Result<()> {
             let key = utils::bc_se(&(user_id, id))?;
-            self.main.remove(key)?.ok_or(Error::EntityDoesNotExist).map(|_| ())
+            self.main.remove(key)?.ok_or(Error::EntityDoesNotExist)?;
+            Ok(())
         }
     }
 
-    fn complete_task(repository: &Repository, user_id: u64, id: u64) -> Result<Option<DateTime<Utc>>> {
+    fn complete_task(repository: &Repository, user_id: u64, id: u64) -> Result<(bool, DateTime<Utc>)> {
         let mut task = repository.find_by_id(user_id, id)?;
         task.postponed_at = None;
         match task.repeat_value {
             0 => {
-                if task.completed != true {
-                    task.completed = true;
-                    repository.update(user_id, id, &task)?;
-                }
-                Ok(None)
+                task.completed = true;
             }
-            value => {
-                match task.repeat_unit {
-                    RepeatUnit::Day => {
-                        task.at = task.at.add(chrono::Duration::days(value as i64));
+            _ => task.at = match task.repeat_behavior {
+                RepeatBehavior::FromCompleted => {
+                    add_duration(Utc::now(), &task.repeat_unit, task.repeat_value)?
+                },
+                RepeatBehavior::FromScheduledInFuture => {
+                    let mut time = add_duration(task.at, &task.repeat_unit, task.repeat_value)?;
+                    let now = Utc::now();
+                    loop {
+                        if time >= now {
+                            break
+                        }
+                        time = add_duration(time, &task.repeat_unit, task.repeat_value)?;
                     }
-                    RepeatUnit::Month => {
-                        let months0 = task.at.month0() + value as u32;
-                        let corrected_month0 = months0 % 12;
-                        let corrected_year = task.at.year() + (months0 / 12) as i32;
-                        task.at = task.at.with_year(corrected_year)
-                            .and_then(|t| t.with_month0(corrected_month0))
-                            .ok_or_else(|| Error::InvalidRequest)?;
-                    }
-                };
-                repository.update(user_id, id, &task)?;
-                Ok(Some(task.at))
+                    time
+                },
+                RepeatBehavior::FromScheduled => {
+                    add_duration(task.at, &task.repeat_unit, task.repeat_value)?
+                },
+            }            
+        };
+        repository.update(user_id, id, &task)?;
+        Ok((task.completed, task.at))
+    }
+
+    fn add_duration(time: DateTime<Utc>, repeat_unit: &RepeatUnit, value: u64) -> Result<DateTime<Utc>> {
+        match repeat_unit {
+            RepeatUnit::Day => {
+                let duration = Duration::days(value as i64);
+                Ok(time.add(duration))
+            }
+            RepeatUnit::Month => {
+                let new_month = time.month0() + value as u32;
+                let normalized_month = new_month % 12;
+                let new_year = time.year() + (new_month / 12) as i32;
+                Ok(time.with_year(new_year)
+                    .and_then(|t| t.with_month0(normalized_month))
+                    .ok_or_else(|| Error::InvalidRequest)?)
             }
         }
     }

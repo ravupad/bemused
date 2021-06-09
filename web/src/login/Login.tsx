@@ -1,56 +1,45 @@
 import {React, Router} from '@raviupadhyay/reactrx';
-import {login} from '../core/client';
+import {login, verifySession} from '../core/client';
 import {blockingErrorPromise, getMessageFromException} from '../core/error';
 import styles from './css/login.scss';
 import classNames from 'classnames/bind';
+import { Observable } from 'rxjs';
 
 const cx = classNames.bind(styles);
 
-class Store {
-  username: string = "";
-  password: string = "";
-  errorEl?: HTMLInputElement;
-
-  constructor(private route: Router.BrowserHistory) {  
+async function handleLogin(username: string, password: string, router: Router.BrowserHistory) {
+  if (username == null || password == null || username === '' || password === '') {
+    return await blockingErrorPromise("Username or Password cannot be blank");
   }
-
-  private checkError(): boolean {
-    if (this.username === "" || this.password === "") {
-      this.errorEl.value = "Username or Password cannot be blank"
-      return false;
-    } else {
-      this.errorEl.value = "";
-      return true;
-    }
-  }
-
-  async handleLogin() {
-    if (!this.checkError()) {
-      return;
-    }
-    try {
-      await login(this.username, this.password);
-      this.route.next("/home");
-    } catch(ex) {
-      await blockingErrorPromise(getMessageFromException(ex));
-    }
-  }
+  await login(username, password)
+    .then(() => router.next("/home"))
+    .catch(ex => blockingErrorPromise(getMessageFromException(ex)));
 }
 
-const Login = ({route, Link}: Router.RouterComponentProps) => {
-  const store = new Store(route);
+function Login(pageProps: Router.RouterComponentProps): Observable<JSX.Element> {
+  return new Observable(view => {
+    view.next(<div>Loading ...</div>);
+    verifySession()
+      .then(() => pageProps.route.next("/home"))
+      .catch(() => view.next(<LoginForm {...pageProps}/>));
+  });
+}
+
+function LoginForm({route, Link}: Router.RouterComponentProps): JSX.Element {
+  let username: string;
+  let password: string;
   return (
     <div class={cx("login")}>
       <h2 class={cx("header")}>Login</h2>
-      <div class={cx("error")} after={(el: any) => store.errorEl = el}></div>
       <div class={cx("label")}>Username</div>
       <input class={cx("input")} placeholder="Username" 
-          oninupt={(e: any) => store.username = e.target.value}/>
+          oninput={(e: any)=>username=e.target.value}/>
       <div class={cx("label")}>Password</div>
       <input class={cx("input")} type="password" placeholder="Password" 
-          oninput={(e: any) => store.password = e.target.value}/>
-      <button class={cx("button")} onclick={() => store.handleLogin()}>Login</button>
-      <Link href="/signup" class={cx("button")}>Signup</Link>
+          oninput={(e: any) => password = e.target.value}/>
+      <button class={cx("button")} 
+          onclick={() => handleLogin(username, password, route)}>Login</button>
+      <Link href="/signup" class={cx("button")}>Go to Signup Page</Link>
     </div>
   );
 };

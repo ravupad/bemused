@@ -137,12 +137,9 @@ export class TaskStore extends BehaviorSubject<TaskStore> {
 
   async completeTask(task: Task) {
     const newTime = await patchTask(task.id);
-    if (newTime == null) {
-      task.completed = true;
-    } else {
-      task.time = newTime;
-      task.postponedTime = null;
-    }
+    task.completed = newTime[0];
+    task.time = newTime[1];
+    task.postponedTime = null;
     this.updateTaskPosition(task);
   }
 
@@ -195,10 +192,7 @@ async function deleteTask(task: Task) {
   return del(`/task/${task.id}`)
 }
 
-async function patchTask(id: number): Promise<DateTime> {
-  let newDate: string = await patch(`/task/${id}/complete`);
-  if (newDate == null) {
-    return null;
-  }
-  return DateTime.fromISO(newDate);
+async function patchTask(id: number): Promise<[boolean, DateTime]> {
+  let [completed, newDate]: [boolean, string] = await patch(`/task/${id}/complete`);
+  return [completed, DateTime.fromISO(newDate)];
 }

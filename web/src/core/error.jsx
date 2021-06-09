@@ -38,6 +38,8 @@ function getMessageFromException(ex) {
   switch(ex.error_code) {
   case "UsernameAlreadyExists":
     return "Username is not available";
+  case "PasswordDoesNotMatch":
+    return "Password does not match";
   default:
     return `Unknown Error with ErrorCode: ${ex.error_code}`;
   }

@@ -81,9 +81,9 @@ function TaskView({route, store, task, create}: TaskProps) {
       </div>      
       <div class={cx('label')}>Postponed To</div>
       <div class={cx('row')}>
-        <input class={cx('value')} type="date" value={state.postponedDate}
+        <input class={cx('value')} type='date' value={state.postponedDate}
             oninput={(e: any) => state.postponedDate = e.target.value}/>
-        <input class={cx('value')} type="time" value={state.postponedTime}
+        <input class={cx('value')} type='time' value={state.postponedTime}
             oninput={(e: any) => state.postponedTime = e.target.value}/>
       </div>
       <div class={cx('label')}>Category</div>
@@ -91,19 +91,20 @@ function TaskView({route, store, task, create}: TaskProps) {
           oninput={(e: any) => task.category = e.target.value}/>
       <div class={cx('label')}>Repeat After</div>
       <div class={cx('row')}>
-        <input class={cx('value', "schedule-value")} type="number" min="0" value={task.repeat_value}
+        <input class={cx('value', 'schedule-value')} type='number' min='0' value={task.repeat_value}
             oninput={(e: any) => task.repeat_value=parseInt(e.target.value)}/>
         <select class={cx('value', 'select')} value={task.repeat_unit} 
             oninput={(e: any) => task.repeat_unit = e.target.value}>
           <option>Day</option>
           <option>Month</option>
         </select>
-        {/* <select class={cx('value')} value={task.repeat_behavior} oninput={(e: any) => task.repeat_behavior = e.target.value}>
-          <option value="FromScheduled">from schedule</option>
-          <option value="FromScheduledInFuture">in future</option>
-          <option value="FromCompleted">from completion</option>
-        </select>*/}
+        <select class={cx('value')} value={task.repeat_behavior} oninput={(e: any) => task.repeat_behavior = e.target.value}>
+          <option value="FromScheduled">After Scheduled</option>
+          <option value="FromScheduledInFuture">After Scheduled In Future</option>
+          <option value="FromCompleted">From Completion</option>
+        </select>
       </div>
+      <div class={cx(`task-completed-${task.completed}`)}>Completed</div>
       <div  class={cx('button-wrapper')}>
         {task.id != -1 ? <button class={cx('button')} onclick={asyncAction(updateHandler)}>Update</button> : []}
         {task.id == -1 ? <button class={cx('button')} onclick={asyncAction(createHandler)}>Create</button> : []}
